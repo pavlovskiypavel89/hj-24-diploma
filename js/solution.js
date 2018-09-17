@@ -2,6 +2,7 @@
 function initApp() {
 	const [app] = document.getElementsByClassName('app'),
 				[menu] = app.getElementsByClassName('menu'),
+				[burgerBtn] = menu.getElementsByClassName('burger'),
 				[newImgBtn] = menu.getElementsByClassName('new'),
 				[commentsBtn] = menu.getElementsByClassName('comments'),
 				[commentsTools] = menu.getElementsByClassName('comments-tools'),
@@ -9,14 +10,15 @@ function initApp() {
 				[drawTools] = menu.getElementsByClassName('draw-tools'),
 				[shareBtn] = menu.getElementsByClassName('share'),
 				[shareTools] = menu.getElementsByClassName('share-tools'),
+				[urlCopyBtn] = shareTools.getElementsByClassName('menu_copy'),
+				[urlTextarea] = shareTools.getElementsByClassName('menu__url'),
         [image] = app.getElementsByClassName('current-image'),
         [preloader] = app.getElementsByClassName('image-loader'),
         [errorMsg] = app.getElementsByClassName('error'),
         [errorHeader] = errorMsg.getElementsByClassName('error__header'),
       	[errorText] = errorMsg.getElementsByClassName('error__message');
 
-  const burgerBtn = menu.removeChild(menu.getElementsByClassName('burger')[0]),
-  			commentsForm = app.removeChild(app.getElementsByClassName('comments__form')[0]);   	
+  const	commentsForm = app.removeChild(app.getElementsByClassName('comments__form')[0]);   	
   
   const apiURL = 'https://neto-api.herokuapp.com/pic';
 
@@ -53,66 +55,6 @@ function initApp() {
     el.style.display = 'none';
   };
 
-  const selectMenuModeTo = ( mode, selectedItemType ) => {
-  	switch(mode) {
-		  case 'initial':
-		    menu.dataset.state = 'initial';
-		    break;
-
-		  case 'default':
-		    menu.dataset.state = 'default';
-		    Array.from(menu.querySelectorAll(`[data-state='selected']`)).forEach(el => el.dataset.state = '');
-		    break;
-
-		  case 'selected':
-		    menu.dataset.state = 'selected';
-		    [commentsBtn, drawBtn, shareBtn].find(
-		  		btn => btn.classList.contains(selectedItemType)
-		  	).dataset.state = 'selected';
-		  	[commentsTools, drawTools, shareTools].find(
-		  		tools => tools.classList.contains(selectedItemType + '-tools')
-		  	).dataset.state = 'selected';
-		    break;
-		}
-
-		sessionStorage.menuStateSettings = JSON.stringify( {mode: mode, selectItemType: selectedItemType} );
-	};
-
-  const selectMenuMode = event => {
-  	if (burgerBtn === event.target || burgerBtn === event.target.parentElement) {
-  		selectMenuModeTo('default');
-  	} else if (drawBtn === event.target || drawBtn === event.target.parentElement) {
-  		selectMenuModeTo('selected', 'draw');	
-  	} else if (commentsBtn === event.target || commentsBtn === event.target.parentElement) {
-  		selectMenuModeTo('selected', 'comments');
-  	} else if (shareBtn === event.target || shareBtn === event.target.parentElement) {
-  		selectMenuModeTo('selected', 'share');
-  	} 
-  }	
-
-	const renderApp = () => {
-  	const imageSettings = getSessionSettings('imageSettings'),
-					menuStateSettings = getSessionSettings('menuStateSettings'),
-					menuPositionSettings = getSessionSettings('menuPositionSettings');
-
-		image.src = imageSettings ? imageSettings.url : '';
-
-	  if (menuStateSettings) {
-	  	selectMenuModeTo(menuStateSettings.mode, menuStateSettings.selectItemType);
-	  } else {
-	  	selectMenuModeTo('initial');
-	  }
-
-	  if (menuPositionSettings) {
-	  	menu.style.left = menuPositionSettings.left + 'px';
-			menu.style.top = menuPositionSettings.top + 'px';
-	  } 
-  };	
-
-  renderApp();
-
-  //////////////////////////////////////////////////////////////////
-
   const checkResponseStatus = ( resp ) => {
   	if (200 <= resp.status && resp.status < 300) {
 			return resp.json();
@@ -130,17 +72,101 @@ function initApp() {
   }
 
   const showImage = ( imgData ) => {
+  	image.addEventListener('load', () => {
+  		image.dataset.status = 'load';
+	  	hideElement(preloader);
+			selectMenuModeTo('selected', 'share');
+	  });
+
 		image.src = imgData.url;
-		image.dataset.status = 'load';
-		sessionStorage.imageSettings = JSON.stringify(imgData);
+		return imgData;
  	};
+
+ 	const saveImageSettings = ( imgData ) => {
+		imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
+		sessionStorage.imageSettings = JSON.stringify(imgData);
+  };
 
   const loadImage = ( {id} ) => {
   	fetch(apiURL + '/' + id)
   	.then(checkResponseStatus)
 		.then(showImage)
+		.then(saveImageSettings)
+		.then(() => urlTextarea.value = getSessionSettings('imageSettings').path)
 		.catch(err => postError(errorHeader.textContent, err.message));
   };
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+  const selectMenuModeTo = ( mode, selectedItemType ) => {
+  	switch(mode) {
+		  case 'initial':
+		    menu.dataset.state = 'initial';
+		    hideElement(burgerBtn);
+		  break;
+
+		  case 'default':
+		    menu.dataset.state = 'default';
+		    Array.from(menu.querySelectorAll(`[data-state='selected']`)).forEach(el => el.dataset.state = '');
+		  break;
+
+		  case 'selected':
+		    menu.dataset.state = 'selected';
+		    [commentsBtn, drawBtn, shareBtn].find(
+		  		btn => btn.classList.contains(selectedItemType)
+		  	).dataset.state = 'selected';
+		  	[commentsTools, drawTools, shareTools].find(
+		  		tools => tools.classList.contains(selectedItemType + '-tools')
+		  	).dataset.state = 'selected';
+		  	showElement(burgerBtn);
+		  break;
+		}
+
+		sessionStorage.menuStateSettings = JSON.stringify( {mode: mode, selectItemType: selectedItemType} );
+	};
+
+  const selectMenuMode = event => {
+  	if (burgerBtn === event.target || burgerBtn === event.target.parentElement) {
+  		selectMenuModeTo('default');
+  	} else if (drawBtn === event.target || drawBtn === event.target.parentElement) {
+  		selectMenuModeTo('selected', 'draw');	
+  	} else if (commentsBtn === event.target || commentsBtn === event.target.parentElement) {
+  		selectMenuModeTo('selected', 'comments');
+  	} else if (shareBtn === event.target || shareBtn === event.target.parentElement) {
+  		selectMenuModeTo('selected', 'share');
+  	} 
+  }	
+
+  const renderApp = () => {
+  	const imageSettings = getSessionSettings('imageSettings'),
+					menuStateSettings = getSessionSettings('menuStateSettings'),
+					menuPositionSettings = getSessionSettings('menuPositionSettings');
+
+	  if (imageSettings) {
+      image.src = imageSettings.url;
+      urlTextarea.value = getSessionSettings('imageSettings').path;
+	  } else {
+      image.src = '';
+            
+      const urlParamID = new URL(`${window.location.href}`).searchParams.get('id');
+      if (urlParamID) { loadImage({id: urlParamID}); } 
+    }
+
+	  if (menuStateSettings) {
+	  	selectMenuModeTo(menuStateSettings.mode, menuStateSettings.selectItemType);
+	  } else {
+	  	selectMenuModeTo('initial');
+	  }
+
+	  if (menuPositionSettings) {
+	  	menu.style.left = menuPositionSettings.left + 'px';
+			menu.style.top = menuPositionSettings.top + 'px';
+	  } 
+  };	
+
+  renderApp();
+
+  //////////////////////////////////////////////////////////////////
 
   const postImage = ( path, file ) => {
     const formData = new FormData(),
@@ -241,16 +267,40 @@ function initApp() {
 	}
 
 	/////////////////////////////////////////////////////////////////////////////
+
+	const checkSelectionResult = () => {
+    try {
+      const done = document.execCommand('copy');
+      console.log('Копирование ссылки: ' + urlTextarea.value + ', выполнено ' + (done ? '' : 'не') + 'успешно');
+    } catch(err) {
+      console.error('Не удалось скопировать ссылку. Ошибка: ' + err);
+    }
+	};
+
+	const clearSelection = () => {
+	  try {
+      window.getSelection().removeAllRanges();
+    } catch(err) {
+      document.selection.empty();
+      console.error(err);
+    }
+	};
+        
+  const copyURL = () => {  
+    if (event.target === urlCopyBtn) {
+      urlTextarea.select();
+      urlTextarea.blur();
+      checkSelectionResult();
+      clearSelection();	
+    }
+  }
+
+	/////////////////////////////////////////////////////////////////////////////
 	
   //Загрузка файла на сервер:
 	menu.addEventListener('click', uploadNewByInput);
   app.addEventListener('dragover', event => event.preventDefault());
   app.addEventListener('drop', uploadNewByDrop);
-  image.addEventListener('load', () => {
-  	hideElement(preloader);
-		menu.insertBefore(burgerBtn, newImgBtn);
-		selectMenuModeTo('selected', 'share');
-  });
 
 	//Перемещение меню:
 	const moveMenu = throttle( (...coords) => dragMenu(...coords) );
@@ -261,6 +311,9 @@ function initApp() {
 
 	//Переключение пунктов меню:
 	menu.addEventListener('click', selectMenuMode);
+
+	//Копирование ссылки в режиме "Поделиться":
+	shareTools.addEventListener('click', copyURL);
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
