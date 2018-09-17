@@ -22,9 +22,11 @@ function initApp() {
   
   const apiURL = 'https://neto-api.herokuapp.com/pic';
 
+  let isLinkedFromShare = false;
+
   /////////////////////////////////////////////////////////////////
 
-  const throttle = (cb) => {
+  const throttle = ( cb ) => {
     let isWaiting = false;
     return function (...args) {
       if (!isWaiting) {
@@ -71,13 +73,15 @@ function initApp() {
 	  showElement(errorMsg);
   }
 
-  const showImage = ( imgData ) => {
-  	image.addEventListener('load', () => {
-  		image.dataset.status = 'load';
-	  	hideElement(preloader);
-			selectMenuModeTo('selected', 'share');
-	  });
+  const changeUI = () => {
+  	image.dataset.status = 'load';
+	  hideElement(preloader);
+		selectMenuModeTo('selected', isLinkedFromShare ? 'comments' : 'share');
+		isLinkedFromShare = false;
+  };
 
+  const showImage = ( imgData ) => {
+  	image.addEventListener('load', changeUI);
 		image.src = imgData.url;
 		return imgData;
  	};
@@ -85,6 +89,7 @@ function initApp() {
  	const saveImageSettings = ( imgData ) => {
 		imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
 		sessionStorage.imageSettings = JSON.stringify(imgData);
+		urlTextarea.value = getSessionSettings('imageSettings').path;
   };
 
   const loadImage = ( {id} ) => {
@@ -92,7 +97,6 @@ function initApp() {
   	.then(checkResponseStatus)
 		.then(showImage)
 		.then(saveImageSettings)
-		.then(() => urlTextarea.value = getSessionSettings('imageSettings').path)
 		.catch(err => postError(errorHeader.textContent, err.message));
   };
 
@@ -125,7 +129,7 @@ function initApp() {
 		sessionStorage.menuStateSettings = JSON.stringify( {mode: mode, selectItemType: selectedItemType} );
 	};
 
-  const selectMenuMode = event => {
+  const selectMenuMode = ( event ) => {
   	if (burgerBtn === event.target || burgerBtn === event.target.parentElement) {
   		selectMenuModeTo('default');
   	} else if (drawBtn === event.target || drawBtn === event.target.parentElement) {
@@ -149,7 +153,10 @@ function initApp() {
       image.src = '';
             
       const urlParamID = new URL(`${window.location.href}`).searchParams.get('id');
-      if (urlParamID) { loadImage({id: urlParamID}); } 
+      if (urlParamID) { 
+      	isLinkedFromShare = true;
+      	loadImage({id: urlParamID});
+      } 
     }
 
 	  if (menuStateSettings) {
@@ -222,7 +229,7 @@ function initApp() {
   let dragged = null,
   		draggedSettings = null;
 
-	const putMenu = event => {
+	const putMenu = ( event ) => {
 		event.preventDefault();
 		if (event.target.classList.contains('drag')) {
 			dragged = event.target.parentElement;
@@ -241,7 +248,7 @@ function initApp() {
 		}
 	}
 
-	const dragMenu = (pageX, pageY) => {
+	const dragMenu = ( pageX, pageY ) => {
 		if (dragged) {
 	    event.preventDefault();
 	    let X = pageX - draggedSettings.shiftX,
@@ -258,7 +265,7 @@ function initApp() {
 		}
 	}
 
-	const dropMenu = event => {
+	const dropMenu = ( event ) => {
 	  if (dragged) { 
 	  	dragged.style.pointerEvents = '';
 	  	sessionStorage.menuPositionSettings = JSON.stringify( {left: dragged.offsetLeft, top: dragged.offsetTop} );
@@ -299,14 +306,14 @@ function initApp() {
 	
   //Загрузка файла на сервер:
 	menu.addEventListener('click', uploadNewByInput);
-  app.addEventListener('dragover', event => event.preventDefault());
+  app.addEventListener('dragover', ( event ) => event.preventDefault());
   app.addEventListener('drop', uploadNewByDrop);
 
 	//Перемещение меню:
 	const moveMenu = throttle( (...coords) => dragMenu(...coords) );
 
   document.addEventListener('mousedown', putMenu);
-	document.addEventListener('mousemove', event => moveMenu(event.pageX, event.pageY));
+	document.addEventListener('mousemove', ( event ) => moveMenu(event.pageX, event.pageY));
 	document.addEventListener('mouseup', dropMenu);
 
 	//Переключение пунктов меню:
