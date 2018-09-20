@@ -21,7 +21,7 @@ function initApp() {
 
   let isLinkedFromShare = false;
 
-  /////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
 
   const throttle = ( cb ) => {
     let isWaiting = false;
@@ -32,6 +32,16 @@ function initApp() {
         requestAnimationFrame(() => isWaiting = false);
       }
     }
+  };
+
+  const checkResponseStatus = ( resp ) => {
+  	if (200 <= resp.status && resp.status < 300) {
+			return resp.json();
+		} else {
+			hideElement(preloader);
+			errorHeader.textContent = 'Ошибка: ' + resp.status;
+			throw new Error(`${resp.statusText}`);
+		}
   };
 
   const getSessionSettings = ( key ) => {
@@ -70,7 +80,7 @@ function initApp() {
 	  return date.toLocaleString('ru-RU', options);
 	};
 
-  ///////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
 
   const showElement = ( el ) => {
     el.style.display = '';
@@ -78,16 +88,6 @@ function initApp() {
 
   const hideElement = ( el ) => {
     el.style.display = 'none';
-  };
-
-  const checkResponseStatus = ( resp ) => {
-  	if (200 <= resp.status && resp.status < 300) {
-			return resp.json();
-		} else {
-			hideElement(preloader);
-			errorHeader.textContent = 'Ошибка: ' + resp.status;
-			throw new Error(`${resp.statusText}`);
-		}
   };
 
   const postError = ( header, message ) => {
@@ -107,31 +107,32 @@ function initApp() {
   const showImage = ( imgData ) => {
   	image.addEventListener('load', changeUI);
 		image.src = imgData.url;
-		if (isLinkedFromShare) { renderComments(imgData);} //////////////////////////////////////////////////// ?!
 		return imgData;
  	};
 
  	const saveImageSettings = ( imgData ) => {
 		imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
-		sessionStorage.imageSettings = JSON.stringify(imgData);
+    sessionStorage.imageSettings = JSON.stringify(imgData);
 		urlTextarea.value = getSessionSettings('imageSettings').path;
+    //return imgData; вот это спорно надо смотреть дает ли эффект при переходе по ссылке (добавлено для промиса)
   };
 
   const loadImage = ( {id} ) => {
   	fetch(apiURL + '/' + id)
   	.then(checkResponseStatus)
 		.then(showImage)
+    .then(renderComments) //вот это спорно, надо смотреть дает ли эффект при переходе по ссылке 
 		.then(saveImageSettings)
 		.catch(err => postError(errorHeader.textContent, err.message));
   };
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
 
   const selectMenuModeTo = ( mode, selectedItemType ) => {
   	switch(mode) {
 		  case 'initial':
 		    menu.dataset.state = 'initial';
-		    app.removeChild(app.getElementsByClassName('comments__form')[0]);
+        app.removeChild(app.getElementsByClassName('comments__form')[0]);
 		    hideElement(burgerBtn);
 		  break;
 
@@ -175,6 +176,7 @@ function initApp() {
 	  if (imageSettings) {
       image.src = imageSettings.url;
       urlTextarea.value = getSessionSettings('imageSettings').path;
+      renderComments(imageSettings);
 	  } else {
       image.src = '';
             
@@ -194,12 +196,12 @@ function initApp() {
 	  if (menuPositionSettings) {
 	  	menu.style.left = menuPositionSettings.left + 'px';
 			menu.style.top = menuPositionSettings.top + 'px';
-	  } 
+	  }  
   };	
 
   renderApp();
 
-  //////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
 
   const postImage = ( path, file ) => {
     const formData = new FormData(),
@@ -250,7 +252,7 @@ function initApp() {
     }
   };
 
-  /////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
 
   let dragged = null,
   		draggedSettings = null;
@@ -299,15 +301,7 @@ function initApp() {
 	  }
 	}
 
-  /////////////////////////////////////////////////////////////////////////////
-
-  const toggleCommentsShow = ( event ) => {
-	  if (event.target.classList.contains('menu__toggle')) {
-	    Array.from(app.getElementsByClassName('comments__form')).forEach(comments => comments.style.display = (event.target.value === 'on') ? '' : 'none'); 
-    }
-	};
-
-	/////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
 
 	const checkSelectionResult = () => {
     try {
@@ -336,10 +330,18 @@ function initApp() {
     }
   }
 
-	/////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////
 
-	const crtNewCommentsForm = ( left, top ) => {
-	  return el('form', { class: 'comments__form', style: `left: ${ left - 22 }px; top: ${ top - 14 }px;` }, [
+  const toggleCommentsShow = ( event ) => {
+	  if (event.target.classList.contains('menu__toggle')) {
+	    Array.from(app.getElementsByClassName('comments__form')).forEach(comments => comments.style.display = (event.target.value === 'on') ? '' : 'none'); 
+    }
+	};
+
+	////////////////////////////////////////////////////////////////////////
+
+	function crtNewCommentsForm( left, top ) {
+	  return el('form', { class: 'comments__form', style: `left: ${ left - 22 }px; top: ${ top - 15 }px;` }, [
 		 	el('span', { class: 'comments__marker' }, null),
 	    el('input', { type: 'checkbox', class: 'comments__marker-checkbox' }, null),
 	    el('div', { class: 'comments__body' }, [
@@ -353,89 +355,38 @@ function initApp() {
     ]);	       
 	};
   
-	const crtNewComment = ( date, message ) => {
+	function crtNewComment( date, message ) {
 		return el('div', { class: 'comment' }, [ 
 		  el('p', { class: 'comment__time' }, date), 
 		  el('p', { class: 'comment__message' }, message) 
 		]);
 	};
-
-  const addNewCommentsForm = ( event ) => {
-	  if (event.target === event.currentTarget && commentsBtn.dataset.state === 'selected') {
-      const newCommentsForm = crtNewCommentsForm(event.pageX, event.pageY);
-
-      newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
-      newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
-      app.appendChild(newCommentsForm);
-    }
-  };
-
-  const addNewComment = ( comment, id ) => { 
-  	const currentCommentsForm = app.querySelector(`.comments__marker[data-left="${comment.left}"][data-top="${comment.top}"]`).parentElement,
-  				[loader] = currentCommentsForm.getElementsByClassName('loader'),
-    			[commentsBody] = currentCommentsForm.getElementsByClassName('comments__body'),
-    			commentDate = getDate(comment.timestamp).replace(',', ''),
-    			newComment = crtNewComment( commentDate, comment.message );
-    
-    newComment.dataset.id = id;
-    loader.style.display = 'none';
-    commentsBody.insertBefore(newComment, loader.parentElement);
-  };
   
-  function renderComments( {comments} ) {
-  	const Forms = Object.keys(comments).reduce(( forms, id ) => {
-  		comments[id].id = id;
-  		if (!forms) {
-  			forms = [ [comments[id]] ];
-  			return forms;
-  		} 
-
-  		const num = forms.findIndex(form => (form[0].left === comments[id].left && form[0].top === comments[id].top));
-  		if (num !== -1) {
-  			forms[num].push(comments[id]);
-  		} else {
-  			forms.push([comments[id]]);
-  		}
-
-  		return forms;
-  	}, null);	
-
-  	Forms.forEach(form => {
-  		const newCommentsForm = crtNewCommentsForm(form[0].left, form[0].top),
-  		      [commentsBody] = newCommentsForm.getElementsByClassName('comments__body'),
-  		      [loader] = newCommentsForm.getElementsByClassName('loader');
-
-      newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
-      newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
-      loader.style.display = 'none';
-
-      form = form.sort(( crnt, next ) => crnt.timestamp - next.timestamp).reduce((f, el) => {
-      	const commentDate = getDate(el.timestamp).replace(',', ''),
-    					newComment = crtNewComment( commentDate, el.message );
-
-      	f.appendChild(newComment)
-      	return f;
-      }, document.createDocumentFragment());
-
-      commentsBody.insertBefore(form, loader.parentElement);
-      app.appendChild(newCommentsForm);
-  	});
-  };
-
-  const loadComment = ( {comments}, left, top ) => {
+  const loadComment = ( imgData, left, top ) => {
   	let crntCommentsForm = [];
     
-    for (const id in comments) {
-    	const comment = comments[id];
+    for (const id in imgData.comments) {
+    	const comment = imgData.comments[id];
     	if (comment.left !== left && comment.top !== top) {
-    		continue;
+    		continue ;
     	} else {
-    		crntCommentsForm.push({id: id, comment: comments[id]});
+    		crntCommentsForm.push(imgData.comments[id]);
     	}
     }
 
-    crntCommentsForm = crntCommentsForm.sort((crnt, next) => crnt.timestamp - next.timestamp);	
-    addNewComment(crntCommentsForm[crntCommentsForm.length - 1].comment, crntCommentsForm[crntCommentsForm.length - 1].id);
+    crntCommentsForm = crntCommentsForm.sort(( prev, next ) => prev.timestamp - next.timestamp);
+
+    const crntComment = crntCommentsForm[crntCommentsForm.length - 1],
+          commentsForm = app.querySelector(`.comments__marker[data-left="${crntComment.left}"][data-top="${crntComment.top}"]`).parentElement,
+  				[loader] = commentsForm.getElementsByClassName('loader'),
+    			[commentsBody] = commentsForm.getElementsByClassName('comments__body'),
+    			commentDate = getDate(crntComment.timestamp).replace(',', ''),
+    			newComment = crtNewComment( commentDate, crntComment.message );
+    
+    newComment.dataset.timestamp = crntComment.timestamp;
+    loader.style.display = 'none';
+    commentsBody.insertBefore(newComment, loader.parentElement);
+    return imgData;
   };
   
   const postComment = ( message, left, top ) => {
@@ -451,43 +402,134 @@ function initApp() {
 		})
     .then(checkResponseStatus)
     .then(data => loadComment(data, left, top))
+    .then(saveImageSettings)
     .catch(err => console.error(err));
   };
-  
+
+  const sendComment = ( event ) => {
+    if (event.target.classList.contains('comments__submit')) {
+ 			event.preventDefault();
+      
+      const crntCommentsForm = event.target.parentElement.parentElement,
+            [loader] = crntCommentsForm.getElementsByClassName('loader'),
+            [message] = crntCommentsForm.getElementsByClassName('comments__input'),
+            left = parseInt(crntCommentsForm.style.left),
+            top = parseInt(crntCommentsForm.style.top);
+      
+      loader.style.display = '';
+      postComment(message.value = '\n', left, top);
+      message.value = '';
+    } 
+  };
+
+  const sendCommentByEnter = ( event ) => {
+    if (!event.repeat && event.code === 'Enter' && event.target.classList.contains('comments__input')) {
+      const submit = event.target.nextElementSibling.nextElementSibling; 
+      submit.dispatchEvent(new MouseEvent('click', event));
+      event.target.blur();
+    }
+  };
+
+  /********************************************************************* */
+
+  function parseNewCommentsForm( imgData, id ) {
+    const newCommentsForm = crtNewCommentsForm(imgData.comments[id].left + 22, imgData.comments[id].top + 15),
+          [commentsBody] = newCommentsForm.getElementsByClassName('comments__body'),
+          [loader] = newCommentsForm.getElementsByClassName('loader');
+    newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
+    newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
+
+    const commentDate = getDate(imgData.comments[id].timestamp).replace(',', ''),
+          newComment = crtNewComment( commentDate, imgData.comments[id].message );
+          newComment.dataset.timestamp = imgData.comments[id].timestamp;
+          
+    commentsBody.insertBefore(newComment, loader.parentElement);
+    return newCommentsForm;
+  };
+
+  function appendNewComment( imgData, id, commentsForm ) {
+    const [commentsBody] = commentsForm.parentElement.getElementsByClassName('comments__body'),
+          comments = Array.from(commentsForm.parentElement.getElementsByClassName('comment')),
+          commentDate = getDate(imgData.comments[id].timestamp).replace(',', ''),
+          newComment = crtNewComment( commentDate, imgData.comments[id].message ),
+          nextComment = comments.find(comment => Number(comment.dataset.timestamp) > imgData.comments[id].timestamp);
+                
+    newComment.dataset.timestamp = imgData.comments[id].timestamp;
+    commentsBody.insertBefore(newComment, nextComment ? nextComment : comments[comments.length - 1]);
+  };
+
+  function renderComments( imgData ) {
+    const defaultComments = app.getElementsByClassName('comments__form')[0];
+    if (defaultComments) { app.removeChild(defaultComments); }
+
+    if (imgData.comments) {
+      const Forms = Object.keys(imgData.comments).reduce(( forms, id ) => {
+        imgData.comments[id].id = id;
+        
+        if (!forms) {
+          const newCommentsForm = parseNewCommentsForm(imgData, id);
+          forms.appendChild(newCommentsForm);
+          return forms;
+        } 
+
+        const commentsForm = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
+        if (commentsForm) {
+          appendNewComment( imgData, id, commentsForm );
+          return forms;
+        } else {
+          const newCommentsForm = parseNewCommentsForm(imgData, id);
+          forms.appendChild(newCommentsForm);
+          return forms;
+        }
+      }, document.createDocumentFragment());
+
+      app.appendChild(Forms);
+    }
+    return imgData;
+  };
+
+  /********************************************************************* */
+
+  function addNewCommentsForm( event ) {
+	  if (event.target === event.currentTarget && commentsBtn.dataset.state === 'selected') {
+      const newCommentsForm = crtNewCommentsForm(event.pageX, event.pageY);
+      
+      newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
+      newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
+      app.appendChild(newCommentsForm);
+      
+      newCommentsForm.getElementsByClassName('comments__marker-checkbox')[0].checked = true;
+      newCommentsForm.getElementsByClassName('comments__marker-checkbox')[0].disabled = true;
+    }
+  };
+
   const openCommentsForm = ( event ) => {
   	if (event.target.classList.contains('comments__marker-checkbox') && event.target.checked) {
   		event.target.disabled = true;
     } 
   };
 
-  const actInCommentsForm = ( event ) => {
-  	//type
+  const typeComment = ( event ) => {
   	if (event.target.classList.contains('comments__input')) {
       event.target.focus();    
     }
-
-    //post
-    if (event.target.classList.contains('comments__submit')) {
-      //+заблокировать кнопку отправки!!!
- 			event.preventDefault();
-      const crntCommentsForm = event.target.parentElement.parentElement,
-            [loader] = crntCommentsForm.getElementsByClassName('loader'),
-            message = crntCommentsForm.getElementsByClassName('comments__input')[0].value,
-            left = parseInt(crntCommentsForm.style.left),
-            top = parseInt(crntCommentsForm.style.top);
-      
-      loader.style.display = '';
-      postComment(message, left, top);	
-    } 
-
-    //close
+  };
+  
+  const closeCommentsForm = ( event ) => {   
     if (event.target.classList.contains('comments__close')) {
- 			const [checkbox] = event.target.parentElement.parentElement.getElementsByClassName('comments__marker-checkbox'); 
-  		checkbox.checked = checkbox.disabled = false;
+      const crntCommentsForm = event.target.parentElement.parentElement, 
+            [commentsContainer] = crntCommentsForm.getElementsByClassName('comment');
+
+      if (commentsContainer.firstElementChild.classList.contains('loader')) {
+        app.removeChild(crntCommentsForm);
+      } else {
+        const [checkbox] = crntCommentsForm.getElementsByClassName('comments__marker-checkbox'); 
+  		  checkbox.checked = checkbox.disabled = false;
+      }
     } 
   };
 
-  /////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
 	
   //Загрузка файла на сервер:
 	menu.addEventListener('click', uploadNewByInput);
@@ -508,38 +550,15 @@ function initApp() {
 	shareTools.addEventListener('click', copyURL);
 
 	//Работа с формой комментариев:
-	app.addEventListener('change', openCommentsForm);
 	app.addEventListener('mousedown', addNewCommentsForm);
-	app.addEventListener('click', actInCommentsForm);
-	
-  //app.addEventListener('click', typeComment);
-	//app.addEventListener('click', postComment);
-	//app.addEventListener('click', closeComments);
+  app.addEventListener('change', openCommentsForm);
+  app.addEventListener('click', typeComment);
+	app.addEventListener('click', sendComment);
+  app.addEventListener('keydown', sendCommentByEnter);
+	app.addEventListener('click', closeCommentsForm);
   
 	//Переключатели отображаения комментариев на странице:
 	commentsTools.addEventListener('change', toggleCommentsShow);
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
-
-
-	/*
-	const crtForm = ( event ) => {
-	 return el('form', { class: 'comments__form' }, [
-		 	el('span', { class: 'comments__marker' }, null),
-	    el('input', { type: 'checkbox', class: 'comments__marker-checkbox' }, null),
-	    el('div', { class: 'comments__body' }, [
-		    el('div', { class: 'comment' }, [ 
-		    		el('p', { class: 'comment__time' }, '28.02.18 19:09:33'), 
-		    		el('p', { class: 'comment__message' }, 'Здесь будет комментарий') 
-		    	]),
-		    el('div', { class: 'comment' }, [ 
-		      el('div', { class: 'loader' }, [ el('span', null, null), el('span', null, null), el('span', null, null), el('span', null, null), el('span', null, null) ])
-		    ]),
-		    el('textarea', { class: 'comments__input', type: 'text', placeholder: 'Напишите ответ...' }, null),
-		    el('input', { class: 'comments__close', type: 'button', value: 'Закрыть' }, null),
-		    el('input', { class: 'comments__submit', type: 'submit', value: 'Отправить' }, null)
-    	])
-    ]);	       
-	};
-  */
