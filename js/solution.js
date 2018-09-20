@@ -17,7 +17,7 @@ function initApp() {
         [errorHeader] = errorMsg.getElementsByClassName('error__header'),
       	[errorText] = errorMsg.getElementsByClassName('error__message');
 
-  const apiURL = 'https://neto-api.herokuapp.com/pic';
+  const apiURL = '//neto-api.herokuapp.com/pic';
 
   let isLinkedFromShare = false;
 
@@ -118,12 +118,14 @@ function initApp() {
   };
 
   const loadImage = ( {id} ) => {
-  	fetch(apiURL + '/' + id)
+  	fetch('https:' + apiURL + '/' + id)
   	.then(checkResponseStatus)
 		.then(showImage)
     .then(renderComments) //вот это спорно, надо смотреть дает ли эффект при переходе по ссылке 
 		.then(saveImageSettings)
 		.catch(err => postError(errorHeader.textContent, err.message));
+
+		initWSSConnection(id);
   };
 
   ////////////////////////////////////////////////////////////////////////
@@ -176,7 +178,9 @@ function initApp() {
 	  if (imageSettings) {
       image.src = imageSettings.url;
       urlTextarea.value = getSessionSettings('imageSettings').path;
+
       renderComments(imageSettings);
+      initWSSConnection(imageSettings.id);
 	  } else {
       image.src = '';
             
@@ -228,7 +232,7 @@ function initApp() {
 			input.type = 'file';
 			input.accept = 'image/jpeg, image/png';
 
-			input.addEventListener('change', event => postImage( apiURL, event.currentTarget.files[0] ));
+			input.addEventListener('change', event => postImage( 'https:' + apiURL, event.currentTarget.files[0] ));
 			input.dispatchEvent( new MouseEvent(event.type, event) );
 		} 
 	};
@@ -242,7 +246,7 @@ function initApp() {
 	      const file = event.dataTransfer.files[0];
 	      
 	      if (/^image\/[(jpeg) | (png)]/.test(file.type)) {
-	        postImage(apiURL, file);
+	        postImage('https:' + apiURL, file);
 	      } else {
 	      	postError('Ошибка', 'Неверный формат файла. Пожалуйста, выберите изображение в формате .jpg или .png.');
 	      }
@@ -376,16 +380,27 @@ function initApp() {
 
     crntCommentsForm = crntCommentsForm.sort(( prev, next ) => prev.timestamp - next.timestamp);
 
+    /****************/
+    const [, dubleCommentsMarker] = Array.from(app.querySelectorAll(`.comments__marker[data-left="${crntCommentsForm[crntCommentsForm.length - 1].left}"][data-top="${crntCommentsForm[crntCommentsForm.length - 1].top}"]`));
+    if (dubleCommentsMarker) { app.removeChild(dubleCommentsMarker.parentElement); }
+   /****************/
+
     const crntComment = crntCommentsForm[crntCommentsForm.length - 1],
           commentsForm = app.querySelector(`.comments__marker[data-left="${crntComment.left}"][data-top="${crntComment.top}"]`).parentElement,
   				[loader] = commentsForm.getElementsByClassName('loader'),
     			[commentsBody] = commentsForm.getElementsByClassName('comments__body'),
     			commentDate = getDate(crntComment.timestamp).replace(',', ''),
     			newComment = crtNewComment( commentDate, crntComment.message );
-    
+
     newComment.dataset.timestamp = crntComment.timestamp;
     loader.style.display = 'none';
     commentsBody.insertBefore(newComment, loader.parentElement);
+
+    /****************/
+    const [, dubleComment] = Array.from(app.querySelectorAll(`.comment[data-timestamp="${crntCommentsForm[crntCommentsForm.length - 1].timestamp}"]`));
+    if (dubleComment) { commentsForm.getElementsByClassName('comments__body')[0].removeChild(dubleComment); }
+    /****************/
+
     return imgData;
   };
   
@@ -393,7 +408,7 @@ function initApp() {
     const id = getSessionSettings('imageSettings').id,
           body = 'message=' + encodeURIComponent(message) + '&left=' + encodeURIComponent(left) + '&top=' + encodeURIComponent(top);
     
-    return fetch(apiURL + '/' + id + '/comments', {
+    return fetch('https:' + apiURL + '/' + id + '/comments', {
 			body: body,
 			method: 'POST',
       headers: {
@@ -417,7 +432,7 @@ function initApp() {
             top = parseInt(crntCommentsForm.style.top);
       
       loader.style.display = '';
-      postComment(message.value = '\n', left, top);
+      postComment(message.value ? message.value: '\n', left, top);
       message.value = '';
     } 
   };
@@ -432,34 +447,34 @@ function initApp() {
 
   /********************************************************************* */
 
-  function parseNewCommentsForm( imgData, id ) {
-    const newCommentsForm = crtNewCommentsForm(imgData.comments[id].left + 22, imgData.comments[id].top + 15),
+  function parseNewCommentsForm( comment, id ) {
+    const newCommentsForm = crtNewCommentsForm(comment.left + 22, comment.top + 15),
           [commentsBody] = newCommentsForm.getElementsByClassName('comments__body'),
           [loader] = newCommentsForm.getElementsByClassName('loader');
     newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
     newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
 
-    const commentDate = getDate(imgData.comments[id].timestamp).replace(',', ''),
-          newComment = crtNewComment( commentDate, imgData.comments[id].message );
-          newComment.dataset.timestamp = imgData.comments[id].timestamp;
+    const commentDate = getDate(comment.timestamp).replace(',', ''),
+          newComment = crtNewComment( commentDate, comment.message );
+          newComment.dataset.timestamp = comment.timestamp;
           
     commentsBody.insertBefore(newComment, loader.parentElement);
     return newCommentsForm;
   };
-
-  function appendNewComment( imgData, id, commentsForm ) {
+  
+  function appendNewComment( comment, id, commentsForm ) {
     const [commentsBody] = commentsForm.parentElement.getElementsByClassName('comments__body'),
           comments = Array.from(commentsForm.parentElement.getElementsByClassName('comment')),
-          commentDate = getDate(imgData.comments[id].timestamp).replace(',', ''),
-          newComment = crtNewComment( commentDate, imgData.comments[id].message ),
-          nextComment = comments.find(comment => Number(comment.dataset.timestamp) > imgData.comments[id].timestamp);
+          commentDate = getDate(comment.timestamp).replace(',', ''),
+          newComment = crtNewComment( commentDate, comment.message ),
+          nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
                 
-    newComment.dataset.timestamp = imgData.comments[id].timestamp;
+    newComment.dataset.timestamp = comment.timestamp;
     commentsBody.insertBefore(newComment, nextComment ? nextComment : comments[comments.length - 1]);
   };
 
   function renderComments( imgData ) {
-    const defaultComments = app.getElementsByClassName('comments__form')[0];
+    const defaultComments = app.getElementsByClassName('comments__form')[0]; //удаляет дефолтную форму, но надо посмотреть как это на всех режимах будет работать
     if (defaultComments) { app.removeChild(defaultComments); }
 
     if (imgData.comments) {
@@ -467,17 +482,18 @@ function initApp() {
         imgData.comments[id].id = id;
         
         if (!forms) {
-          const newCommentsForm = parseNewCommentsForm(imgData, id);
+          const newCommentsForm = parseNewCommentsForm(imgData.comments[id], id);
           forms.appendChild(newCommentsForm);
           return forms;
         } 
 
-        const commentsForm = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
-        if (commentsForm) {
-          appendNewComment( imgData, id, commentsForm );
+        const commentsMarker = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
+
+        if (commentsMarker) {
+          appendNewComment( imgData.comments[id], id, commentsMarker );
           return forms;
         } else {
-          const newCommentsForm = parseNewCommentsForm(imgData, id);
+          const newCommentsForm = parseNewCommentsForm(imgData.comments[id], id);
           forms.appendChild(newCommentsForm);
           return forms;
         }
@@ -559,6 +575,42 @@ function initApp() {
   
 	//Переключатели отображаения комментариев на странице:
 	commentsTools.addEventListener('change', toggleCommentsShow);
+
+	//Инициализация и логика работы вебсокет соединения:
+	function initWSSConnection( id ) {
+  	const socket = new WebSocket('wss:' + apiURL + '/' + id);
+
+    const updateApp = ( event ) => {
+    	const wssResponse = JSON.parse(event.data);
+
+    	switch(wssResponse.event) {
+			  case 'pic':
+			  	console.log(wssResponse.pic);
+			  break;
+
+			  case 'comment':  
+			  	const commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
+	
+			  	if (commentsMarker) {
+			  		appendNewComment( wssResponse.comment, wssResponse.comment.id, commentsMarker );
+			  	} else {
+			  		const newCommentsForm = parseNewCommentsForm(wssResponse.comment, wssResponse.comment.id);
+          	app.appendChild(newCommentsForm); 
+			  	}
+			  break;
+
+			  case 'mask':
+			  	console.log(wssResponse.mask);
+			  break;
+			}
+    };
+
+    socket.addEventListener('message', updateApp);
+    socket.addEventListener('open', event => console.log('Произошло соединение с вебсокетом'));
+    socket.addEventListener('close', event => console.log(event.wasClean ? '"Чистое закрытие" соединения' : `Обрыв связи. Причина: ${event.reason}`));
+    window.addEventListener('beforeunload', () => socket.close(1000, 'Сессия успешно завершена'));
+    socket.addEventListener('error', error => console.error(`Ошибка: ${error.message}`));
+  }
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
