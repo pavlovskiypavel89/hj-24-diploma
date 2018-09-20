@@ -10,7 +10,6 @@ function initApp() {
 				[drawTools] = menu.getElementsByClassName('draw-tools'),
 				[shareBtn] = menu.getElementsByClassName('share'),
 				[shareTools] = menu.getElementsByClassName('share-tools'),
-				[urlCopyBtn] = shareTools.getElementsByClassName('menu_copy'),
 				[urlTextarea] = shareTools.getElementsByClassName('menu__url'),
         [image] = app.getElementsByClassName('current-image'),
         [preloader] = app.getElementsByClassName('image-loader'),
@@ -18,8 +17,6 @@ function initApp() {
         [errorHeader] = errorMsg.getElementsByClassName('error__header'),
       	[errorText] = errorMsg.getElementsByClassName('error__message');
 
-  const	commentsForm = app.removeChild(app.getElementsByClassName('comments__form')[0]);   	
-  
   const apiURL = 'https://neto-api.herokuapp.com/pic';
 
   let isLinkedFromShare = false;
@@ -47,6 +44,32 @@ function initApp() {
 		}
 	};
 
+  const el = ( name, attrs, childs ) => {
+ 	  const element = document.createElement(name || 'div');
+  
+    if (typeof attrs === 'object' && attrs) {
+     Object.keys(attrs).forEach(key => element.setAttribute(key, attrs[key]));
+    }
+    if (Array.isArray(childs)) {
+     element.appendChild(
+        childs.reduce((f, child) => {
+          f.appendChild(child);
+          return f;
+        }, document.createDocumentFragment())
+      );
+    } else if (typeof childs === 'string' || typeof childs === 'number') {
+    	element.appendChild(document.createTextNode(childs));
+    } 
+  
+    return element;
+  };
+ 
+	const getDate = ( timestamp ) => {
+	  const date = new Date(timestamp);
+	  const options = { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+	  return date.toLocaleString('ru-RU', options);
+	};
+
   ///////////////////////////////////////////////////////////////////
 
   const showElement = ( el ) => {
@@ -71,18 +94,20 @@ function initApp() {
   	errorHeader.textContent = header;
 	  errorText.textContent = message;
 	  showElement(errorMsg);
-  }
+  };
 
   const changeUI = () => {
   	image.dataset.status = 'load';
 	  hideElement(preloader);
 		selectMenuModeTo('selected', isLinkedFromShare ? 'comments' : 'share');
+		
 		isLinkedFromShare = false;
   };
 
   const showImage = ( imgData ) => {
   	image.addEventListener('load', changeUI);
 		image.src = imgData.url;
+		if (isLinkedFromShare) { renderComments(imgData);} //////////////////////////////////////////////////// ?!
 		return imgData;
  	};
 
@@ -106,6 +131,7 @@ function initApp() {
   	switch(mode) {
 		  case 'initial':
 		    menu.dataset.state = 'initial';
+		    app.removeChild(app.getElementsByClassName('comments__form')[0]);
 		    hideElement(burgerBtn);
 		  break;
 
@@ -155,7 +181,7 @@ function initApp() {
       const urlParamID = new URL(`${window.location.href}`).searchParams.get('id');
       if (urlParamID) { 
       	isLinkedFromShare = true;
-      	loadImage({id: urlParamID});
+      	loadImage( {id: urlParamID} );
       } 
     }
 
@@ -273,12 +299,20 @@ function initApp() {
 	  }
 	}
 
+  /////////////////////////////////////////////////////////////////////////////
+
+  const toggleCommentsShow = ( event ) => {
+	  if (event.target.classList.contains('menu__toggle')) {
+	    Array.from(app.getElementsByClassName('comments__form')).forEach(comments => comments.style.display = (event.target.value === 'on') ? '' : 'none'); 
+    }
+	};
+
 	/////////////////////////////////////////////////////////////////////////////
 
 	const checkSelectionResult = () => {
     try {
       const done = document.execCommand('copy');
-      console.log('Копирование ссылки: ' + urlTextarea.value + ', выполнено ' + (done ? '' : 'не') + 'успешно');
+      console.log('Копирование ссылки: ' + urlTextarea.value + (done ? ' ' : ' не') + 'выполнено');
     } catch(err) {
       console.error('Не удалось скопировать ссылку. Ошибка: ' + err);
     }
@@ -294,7 +328,7 @@ function initApp() {
 	};
         
   const copyURL = () => {  
-    if (event.target === urlCopyBtn) {
+    if (event.target.classList.contains('menu_copy')) {
       urlTextarea.select();
       urlTextarea.blur();
       checkSelectionResult();
@@ -303,6 +337,157 @@ function initApp() {
   }
 
 	/////////////////////////////////////////////////////////////////////////////
+
+	const crtNewCommentsForm = ( left, top ) => {
+	  return el('form', { class: 'comments__form', style: `left: ${ left - 22 }px; top: ${ top - 14 }px;` }, [
+		 	el('span', { class: 'comments__marker' }, null),
+	    el('input', { type: 'checkbox', class: 'comments__marker-checkbox' }, null),
+	    el('div', { class: 'comments__body' }, [
+        el('div', { class: 'comment' }, [ 
+		      el('div', { class: 'loader', style: 'display: none;' }, [ el('span', null, null), el('span', null, null), el('span', null, null), el('span', null, null), el('span', null, null) ])
+		    ]),
+		    el('textarea', { class: 'comments__input', type: 'text', placeholder: 'Напишите ответ...' }, null),
+		    el('input', { class: 'comments__close', type: 'button', value: 'Закрыть' }, null),
+		    el('input', { class: 'comments__submit', type: 'submit', value: 'Отправить' }, null)
+    	])
+    ]);	       
+	};
+  
+	const crtNewComment = ( date, message ) => {
+		return el('div', { class: 'comment' }, [ 
+		  el('p', { class: 'comment__time' }, date), 
+		  el('p', { class: 'comment__message' }, message) 
+		]);
+	};
+
+  const addNewCommentsForm = ( event ) => {
+	  if (event.target === event.currentTarget && commentsBtn.dataset.state === 'selected') {
+      const newCommentsForm = crtNewCommentsForm(event.pageX, event.pageY);
+
+      newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
+      newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
+      app.appendChild(newCommentsForm);
+    }
+  };
+
+  const addNewComment = ( comment, id ) => { 
+  	const currentCommentsForm = app.querySelector(`.comments__marker[data-left="${comment.left}"][data-top="${comment.top}"]`).parentElement,
+  				[loader] = currentCommentsForm.getElementsByClassName('loader'),
+    			[commentsBody] = currentCommentsForm.getElementsByClassName('comments__body'),
+    			commentDate = getDate(comment.timestamp).replace(',', ''),
+    			newComment = crtNewComment( commentDate, comment.message );
+    
+    newComment.dataset.id = id;
+    loader.style.display = 'none';
+    commentsBody.insertBefore(newComment, loader.parentElement);
+  };
+  
+  function renderComments( {comments} ) {
+  	const Forms = Object.keys(comments).reduce(( forms, id ) => {
+  		comments[id].id = id;
+  		if (!forms) {
+  			forms = [ [comments[id]] ];
+  			return forms;
+  		} 
+
+  		const num = forms.findIndex(form => (form[0].left === comments[id].left && form[0].top === comments[id].top));
+  		if (num !== -1) {
+  			forms[num].push(comments[id]);
+  		} else {
+  			forms.push([comments[id]]);
+  		}
+
+  		return forms;
+  	}, null);	
+
+  	Forms.forEach(form => {
+  		const newCommentsForm = crtNewCommentsForm(form[0].left, form[0].top),
+  		      [commentsBody] = newCommentsForm.getElementsByClassName('comments__body'),
+  		      [loader] = newCommentsForm.getElementsByClassName('loader');
+
+      newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
+      newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
+      loader.style.display = 'none';
+
+      form = form.sort(( crnt, next ) => crnt.timestamp - next.timestamp).reduce((f, el) => {
+      	const commentDate = getDate(el.timestamp).replace(',', ''),
+    					newComment = crtNewComment( commentDate, el.message );
+
+      	f.appendChild(newComment)
+      	return f;
+      }, document.createDocumentFragment());
+
+      commentsBody.insertBefore(form, loader.parentElement);
+      app.appendChild(newCommentsForm);
+  	});
+  };
+
+  const loadComment = ( {comments}, left, top ) => {
+  	let crntCommentsForm = [];
+    
+    for (const id in comments) {
+    	const comment = comments[id];
+    	if (comment.left !== left && comment.top !== top) {
+    		continue;
+    	} else {
+    		crntCommentsForm.push({id: id, comment: comments[id]});
+    	}
+    }
+
+    crntCommentsForm = crntCommentsForm.sort((crnt, next) => crnt.timestamp - next.timestamp);	
+    addNewComment(crntCommentsForm[crntCommentsForm.length - 1].comment, crntCommentsForm[crntCommentsForm.length - 1].id);
+  };
+  
+  const postComment = ( message, left, top ) => {
+    const id = getSessionSettings('imageSettings').id,
+          body = 'message=' + encodeURIComponent(message) + '&left=' + encodeURIComponent(left) + '&top=' + encodeURIComponent(top);
+    
+    return fetch(apiURL + '/' + id + '/comments', {
+			body: body,
+			method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+		})
+    .then(checkResponseStatus)
+    .then(data => loadComment(data, left, top))
+    .catch(err => console.error(err));
+  };
+  
+  const openCommentsForm = ( event ) => {
+  	if (event.target.classList.contains('comments__marker-checkbox') && event.target.checked) {
+  		event.target.disabled = true;
+    } 
+  };
+
+  const actInCommentsForm = ( event ) => {
+  	//type
+  	if (event.target.classList.contains('comments__input')) {
+      event.target.focus();    
+    }
+
+    //post
+    if (event.target.classList.contains('comments__submit')) {
+      //+заблокировать кнопку отправки!!!
+ 			event.preventDefault();
+      const crntCommentsForm = event.target.parentElement.parentElement,
+            [loader] = crntCommentsForm.getElementsByClassName('loader'),
+            message = crntCommentsForm.getElementsByClassName('comments__input')[0].value,
+            left = parseInt(crntCommentsForm.style.left),
+            top = parseInt(crntCommentsForm.style.top);
+      
+      loader.style.display = '';
+      postComment(message, left, top);	
+    } 
+
+    //close
+    if (event.target.classList.contains('comments__close')) {
+ 			const [checkbox] = event.target.parentElement.parentElement.getElementsByClassName('comments__marker-checkbox'); 
+  		checkbox.checked = checkbox.disabled = false;
+    } 
+  };
+
+  /////////////////////////////////////////////////////////////////////////////
 	
   //Загрузка файла на сервер:
 	menu.addEventListener('click', uploadNewByInput);
@@ -321,6 +506,40 @@ function initApp() {
 
 	//Копирование ссылки в режиме "Поделиться":
 	shareTools.addEventListener('click', copyURL);
+
+	//Работа с формой комментариев:
+	app.addEventListener('change', openCommentsForm);
+	app.addEventListener('mousedown', addNewCommentsForm);
+	app.addEventListener('click', actInCommentsForm);
+	
+  //app.addEventListener('click', typeComment);
+	//app.addEventListener('click', postComment);
+	//app.addEventListener('click', closeComments);
+  
+	//Переключатели отображаения комментариев на странице:
+	commentsTools.addEventListener('change', toggleCommentsShow);
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
+
+
+	/*
+	const crtForm = ( event ) => {
+	 return el('form', { class: 'comments__form' }, [
+		 	el('span', { class: 'comments__marker' }, null),
+	    el('input', { type: 'checkbox', class: 'comments__marker-checkbox' }, null),
+	    el('div', { class: 'comments__body' }, [
+		    el('div', { class: 'comment' }, [ 
+		    		el('p', { class: 'comment__time' }, '28.02.18 19:09:33'), 
+		    		el('p', { class: 'comment__message' }, 'Здесь будет комментарий') 
+		    	]),
+		    el('div', { class: 'comment' }, [ 
+		      el('div', { class: 'loader' }, [ el('span', null, null), el('span', null, null), el('span', null, null), el('span', null, null), el('span', null, null) ])
+		    ]),
+		    el('textarea', { class: 'comments__input', type: 'text', placeholder: 'Напишите ответ...' }, null),
+		    el('input', { class: 'comments__close', type: 'button', value: 'Закрыть' }, null),
+		    el('input', { class: 'comments__submit', type: 'submit', value: 'Отправить' }, null)
+    	])
+    ]);	       
+	};
+  */
