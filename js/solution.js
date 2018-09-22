@@ -62,7 +62,7 @@ function initApp() {
     }
     if (Array.isArray(childs)) {
      element.appendChild(
-        childs.reduce((f, child) => {
+        childs.reduce(( f, child ) => {
           f.appendChild(child);
           return f;
         }, document.createDocumentFragment())
@@ -117,7 +117,7 @@ function initApp() {
     //return imgData; вот это спорно надо смотреть дает ли эффект при переходе по ссылке (добавлено для промиса)
   };
 
-  const loadImage = ( {id} ) => {
+  const loadImage = ( { id } ) => {
   	fetch('https:' + apiURL + '/' + id)
   	.then(checkResponseStatus)
 		.then(showImage)
@@ -155,7 +155,7 @@ function initApp() {
 		  break;
 		}
 
-		sessionStorage.menuStateSettings = JSON.stringify( {mode: mode, selectItemType: selectedItemType} );
+		sessionStorage.menuStateSettings = JSON.stringify({ mode: mode, selectItemType: selectedItemType });
 	};
 
   const selectMenuMode = ( event ) => {
@@ -232,8 +232,8 @@ function initApp() {
 			input.type = 'file';
 			input.accept = 'image/jpeg, image/png';
 
-			input.addEventListener('change', event => postImage( 'https:' + apiURL, event.currentTarget.files[0] ));
-			input.dispatchEvent( new MouseEvent(event.type, event) );
+			input.addEventListener('change', event => postImage('https:' + apiURL, event.currentTarget.files[0]));
+			input.dispatchEvent(new MouseEvent(event.type, event));
 		} 
 	};
 
@@ -300,7 +300,7 @@ function initApp() {
 	const dropMenu = ( event ) => {
 	  if (dragged) { 
 	  	dragged.style.pointerEvents = '';
-	  	sessionStorage.menuPositionSettings = JSON.stringify( {left: dragged.offsetLeft, top: dragged.offsetTop} );
+	  	sessionStorage.menuPositionSettings = JSON.stringify({ left: dragged.offsetLeft, top: dragged.offsetTop });
 	  	dragged = null; 
 	  }
 	}
@@ -338,7 +338,9 @@ function initApp() {
 
   const toggleCommentsShow = ( event ) => {
 	  if (event.target.classList.contains('menu__toggle')) {
-	    Array.from(app.getElementsByClassName('comments__form')).forEach(comments => comments.style.display = (event.target.value === 'on') ? '' : 'none'); 
+	    Array.from(app.getElementsByClassName('comments__form')).forEach(
+	    	comments => comments.style.display = (event.target.value === 'on') ? '' : 'none'
+	    ); 
     }
 	};
 
@@ -366,42 +368,22 @@ function initApp() {
 		]);
 	};
   
-  const loadComment = ( imgData, left, top ) => {
-  	let crntCommentsForm = [];
-    
-    for (const id in imgData.comments) {
-    	const comment = imgData.comments[id];
-    	if (comment.left !== left && comment.top !== top) {
-    		continue ;
-    	} else {
-    		crntCommentsForm.push(imgData.comments[id]);
-    	}
-    }
+  function loadComment( imgData, left, top ) {
+  	//if (!imgData) { return ; }
+  	const commentForm = app.querySelector(`.comments__marker[data-left="${left}"][data-top="${top}"]`).parentElement,
+  				[loader] = commentForm.getElementsByClassName('loader');
 
-    crntCommentsForm = crntCommentsForm.sort(( prev, next ) => prev.timestamp - next.timestamp);
+	  for (const id in imgData.comments) {
+	    const comment = imgData.comments[id],
+	    			isPostedComment = app.querySelector(`.comment[data-timestamp="${comment.timestamp}"]`);
 
-    /****************/
-    const [, dubleCommentsMarker] = Array.from(app.querySelectorAll(`.comments__marker[data-left="${crntCommentsForm[crntCommentsForm.length - 1].left}"][data-top="${crntCommentsForm[crntCommentsForm.length - 1].top}"]`));
-    if (dubleCommentsMarker) { app.removeChild(dubleCommentsMarker.parentElement); }
-   /****************/
-
-    const crntComment = crntCommentsForm[crntCommentsForm.length - 1],
-          commentsForm = app.querySelector(`.comments__marker[data-left="${crntComment.left}"][data-top="${crntComment.top}"]`).parentElement,
-  				[loader] = commentsForm.getElementsByClassName('loader'),
-    			[commentsBody] = commentsForm.getElementsByClassName('comments__body'),
-    			commentDate = getDate(crntComment.timestamp).replace(',', ''),
-    			newComment = crtNewComment( commentDate, crntComment.message );
-
-    newComment.dataset.timestamp = crntComment.timestamp;
-    loader.style.display = 'none';
-    commentsBody.insertBefore(newComment, loader.parentElement);
-
-    /****************/
-    const [, dubleComment] = Array.from(app.querySelectorAll(`.comment[data-timestamp="${crntCommentsForm[crntCommentsForm.length - 1].timestamp}"]`));
-    if (dubleComment) { commentsForm.getElementsByClassName('comments__body')[0].removeChild(dubleComment); }
-    /****************/
-
-    return imgData;
+	    if (comment.left === left && comment.top === top && !isPostedComment) {
+	    	appendNewComment(comment, commentForm);
+	    	loader.style.display = 'none';
+	    	break ;
+	    }
+	  }
+	  return imgData;  	
   };
   
   const postComment = ( message, left, top ) => {
@@ -455,16 +437,16 @@ function initApp() {
     newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
 
     const commentDate = getDate(comment.timestamp).replace(',', ''),
-          newComment = crtNewComment( commentDate, comment.message );
+          newComment = crtNewComment(commentDate, comment.message);
           newComment.dataset.timestamp = comment.timestamp;
           
     commentsBody.insertBefore(newComment, loader.parentElement);
     return newCommentsForm;
   };
   
-  function appendNewComment( comment, id, commentsForm ) {
-    const [commentsBody] = commentsForm.parentElement.getElementsByClassName('comments__body'),
-          comments = Array.from(commentsForm.parentElement.getElementsByClassName('comment')),
+  function appendNewComment( comment, commentsForm ) {
+    const [commentsBody] = commentsForm.getElementsByClassName('comments__body'),
+          comments = Array.from(commentsBody.getElementsByClassName('comment')),
           commentDate = getDate(comment.timestamp).replace(',', ''),
           newComment = crtNewComment( commentDate, comment.message ),
           nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
@@ -474,7 +456,7 @@ function initApp() {
   };
 
   function renderComments( imgData ) {
-    const defaultComments = app.getElementsByClassName('comments__form')[0]; //удаляет дефолтную форму, но надо посмотреть как это на всех режимах будет работать
+    const defaultComments = app.getElementsByClassName('comments__form')[0]; //Удаляет дефолтную форму, но надо посмотреть как это на всех режимах будет работать
     if (defaultComments) { app.removeChild(defaultComments); }
 
     if (imgData.comments) {
@@ -490,7 +472,7 @@ function initApp() {
         const commentsMarker = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
 
         if (commentsMarker) {
-          appendNewComment( imgData.comments[id], id, commentsMarker );
+          appendNewComment(imgData.comments[id], commentsMarker.parentElement);
           return forms;
         } else {
           const newCommentsForm = parseNewCommentsForm(imgData.comments[id], id);
@@ -553,7 +535,7 @@ function initApp() {
   app.addEventListener('drop', uploadNewByDrop);
 
 	//Перемещение меню:
-	const moveMenu = throttle( (...coords) => dragMenu(...coords) );
+	const moveMenu = throttle(( ...coords )=> dragMenu(...coords) );
 
   document.addEventListener('mousedown', putMenu);
 	document.addEventListener('mousemove', ( event ) => moveMenu(event.pageX, event.pageY));
@@ -580,6 +562,15 @@ function initApp() {
 	function initWSSConnection( id ) {
   	const socket = new WebSocket('wss:' + apiURL + '/' + id);
 
+  	const addCommentInDirectory = (	comment, directory ) => {
+  		directory[comment.id] = {
+	      left: comment.left,
+	      top: comment.top,
+	      message: comment.message,
+	      timestamp: comment.timestamp
+	    };
+  	}
+
     const updateApp = ( event ) => {
     	const wssResponse = JSON.parse(event.data);
 
@@ -589,14 +580,28 @@ function initApp() {
 			  break;
 
 			  case 'comment':  
-			  	const commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
-	
+          //const imageSettings = getSessionSettings('imageSettings') ? getSessionSettings('imageSettings') : {};
+          const imageSettings = getSessionSettings('imageSettings'),
+          			commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
+
+          if (imageSettings.comments) {
+          	addCommentInDirectory(wssResponse.comment, imageSettings.comments);
+          } else {
+          	imageSettings.comments = {};
+          	addCommentInDirectory(wssResponse.comment, imageSettings.comments);
+          }
+
 			  	if (commentsMarker) {
-			  		appendNewComment( wssResponse.comment, wssResponse.comment.id, commentsMarker );
-			  	} else {
-			  		const newCommentsForm = parseNewCommentsForm(wssResponse.comment, wssResponse.comment.id);
-          	app.appendChild(newCommentsForm); 
-			  	}
+			  		loadComment(imageSettings, wssResponse.comment.left, wssResponse.comment.top);
+			    } else {
+			      const newCommentsForm = crtNewCommentsForm(wssResponse.comment.left, wssResponse.comment.top);
+			      
+			      newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
+			      newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
+			      app.appendChild(newCommentsForm);
+			      
+			      loadComment(imageSettings, wssResponse.comment.left, wssResponse.comment.top);
+			    }
 			  break;
 
 			  case 'mask':
@@ -606,10 +611,10 @@ function initApp() {
     };
 
     socket.addEventListener('message', updateApp);
-    socket.addEventListener('open', event => console.log('Произошло соединение с вебсокетом'));
-    socket.addEventListener('close', event => console.log(event.wasClean ? '"Чистое закрытие" соединения' : `Обрыв связи. Причина: ${event.reason}`));
+    socket.addEventListener('open', ( event ) => console.log('Установлено вебсокет соединение'));
+    socket.addEventListener('close', ( event ) => console.log(event.wasClean ? '"Чистое закрытие" соединения' : `Обрыв связи. Причина: ${event.reason}`));
     window.addEventListener('beforeunload', () => socket.close(1000, 'Сессия успешно завершена'));
-    socket.addEventListener('error', error => console.error(`Ошибка: ${error.message}`));
+    socket.addEventListener('error', ( error ) => console.error(`Ошибка: ${error.message}`));
   }
 }
 
