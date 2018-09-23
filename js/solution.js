@@ -7,6 +7,7 @@ function initApp() {
 				[commentsBtn] = menu.getElementsByClassName('comments'),
 				[commentsTools] = menu.getElementsByClassName('comments-tools'),
 				commentsOff = document.getElementById('comments-off'),
+				[marker] = app.getElementsByClassName('comments__marker'),
 				[drawBtn] = menu.getElementsByClassName('draw'),
 				[drawTools] = menu.getElementsByClassName('draw-tools'),
 				[shareBtn] = menu.getElementsByClassName('share'),
@@ -17,8 +18,17 @@ function initApp() {
         [errorMsg] = app.getElementsByClassName('error'),
         [errorHeader] = errorMsg.getElementsByClassName('error__header'),
       	[errorText] = errorMsg.getElementsByClassName('error__message');
-
+  
   const apiURL = '//neto-api.herokuapp.com/pic';
+
+  const clickPointShifts = (() => {
+  	const pointShifts = {},
+  				markerBounds = marker.getBoundingClientRect(),
+  	      formBounds = marker.parentElement.getBoundingClientRect();    
+  	pointShifts.left = (markerBounds.left - formBounds.left) + markerBounds.width / 2;       
+  	pointShifts.top = (markerBounds.top - formBounds.top) + markerBounds.height;
+  	return pointShifts;      
+  })();
 
   let isLinkedFromShare = false;
 
@@ -59,14 +69,13 @@ function initApp() {
 		imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
     sessionStorage.imageSettings = JSON.stringify(imgData);
 		urlTextarea.value = getSessionSettings('imageSettings').path;
-    //return imgData; вот это спорно надо смотреть дает ли эффект при переходе по ссылке (добавлено для промиса)
   };
 
   const hideComments = ( radioBtn ) => {
   	Array.from(app.getElementsByClassName('comments__form')).forEach(
 		  comments => comments.style.display = (radioBtn.value === 'on') ? '' : 'none'
 		);
-  }
+  };
 
   const el = ( name, attrs, childs ) => {
  	  const element = document.createElement(name || 'div');
@@ -128,7 +137,7 @@ function initApp() {
   	fetch('https:' + apiURL + '/' + id)
   	.then(checkResponseStatus)
 		.then(showImage)
-    .then(renderComments) //вот это спорно, надо смотреть дает ли эффект при переходе по ссылке 
+    .then(renderComments) //проверить корректность, скорее всего нормально 
 		.then(saveImageSettings)
 		.catch(err => postError(errorHeader.textContent, err.message));
 
@@ -182,22 +191,20 @@ function initApp() {
   	} else if (shareBtn === event.target || shareBtn === event.target.parentElement) {
   		selectMenuModeTo('selected', 'share');
   	} 
-  }	
+  };	
  
   const renderApp = () => {
   	const imageSettings = getSessionSettings('imageSettings'),
 					menuSettings = getSessionSettings('menuSettings');
 
+		image.src = '';			
 	  if (imageSettings) {
       image.src = imageSettings.url;
       urlTextarea.value = imageSettings.path;
-
       renderComments(imageSettings);
       initWSSConnection(imageSettings.id);
 	  } else {
 	  	const urlParamID = new URL(`${window.location.href}`).searchParams.get('id');
-      image.src = ''; 
-
       if (urlParamID) { 
       	isLinkedFromShare = true;
       	loadImage({ id: urlParamID });
@@ -205,9 +212,9 @@ function initApp() {
     }
 
 	  if (menuSettings) {
-	  	selectMenuModeTo(menuSettings.mode, menuSettings.selectItemType);
 	  	menu.style.left = menuSettings.left + 'px';
 			menu.style.top = menuSettings.top + 'px';
+			selectMenuModeTo(menuSettings.mode, menuSettings.selectItemType);
 
 			if (menuSettings.displayComments === 'hidden') {
       	commentsOff.checked = true;
@@ -293,7 +300,7 @@ function initApp() {
 				maxY: app.offsetHeight - Number(draggedCSS.height.replace('px', ''))
 			};
 		}
-	}
+	};
 
 	const dragMenu = ( pageX, pageY ) => {
 		if (dragged) {
@@ -310,7 +317,7 @@ function initApp() {
 			dragged.style.top = Y + 'px';
 			dragged.style.pointerEvents = 'none';
 		}
-	}
+	};
 
 	const dropMenu = ( event ) => {
 	  if (dragged) { 
@@ -326,7 +333,7 @@ function initApp() {
 			}
 	  	dragged = null; 
 	  }
-	}
+	};
 
   ////////////////////////////////////////////////////////////////////////
 
@@ -355,24 +362,73 @@ function initApp() {
       checkSelectionResult();
       clearSelection();	
     }
-  }
+  };
 
-	////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
+  
+  function appendNewComment( comment, commentsForm ) {
+    const [commentsBody] = commentsForm.getElementsByClassName('comments__body'),
+          comments = Array.from(commentsBody.getElementsByClassName('comment')),
+          commentDate = getDate(comment.timestamp).replace(',', ''),
+          newComment = crtNewCommentNode(commentDate, comment.message),
+          nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
+                
+    newComment.dataset.timestamp = comment.timestamp;
+    commentsBody.insertBefore(newComment, ( nextComment ? nextComment : comments[comments.length - 1] ));
+  };
 
-  const toggleCommentsShow = ( event ) => {
-	  if (event.target.classList.contains('menu__toggle')) {
-	  	hideComments(event.target);
+  function crtNewCommentsForm( left, top ) {
+  	const newCommentsForm = crtNewCommentsFormNode(left, top);
+      
+    newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
+    newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
+    return newCommentsForm;
+  };
 
-	    const menuSettings = getSessionSettings('menuSettings');
-	    menuSettings.displayComments = menuSettings.displayComments ? '' : 'hidden';
-	    sessionStorage.menuSettings = JSON.stringify(menuSettings);
+  function parseNewCommentsForm( comment ) {
+		const newCommentsForm = crtNewCommentsForm(comment.left, comment.top),
+          [commentsBody] = newCommentsForm.getElementsByClassName('comments__body'),
+          [loader] = newCommentsForm.getElementsByClassName('loader'),
+					commentDate = getDate(comment.timestamp).replace(',', ''),
+          newComment = crtNewCommentNode(commentDate, comment.message);
+
+    newComment.dataset.timestamp = comment.timestamp; 
+    app.appendChild(newCommentsForm);
+    commentsBody.insertBefore(newComment, loader.parentElement);
+    return newCommentsForm;
+  };
+
+  function renderComments( imgData ) {
+    if (imgData.comments) {
+    	const [defaultCommentsForm] = app.getElementsByClassName('comments__form'); //Удаляет дефолтную форму, при перезагрузке страницы
+  		if (defaultCommentsForm) { app.removeChild(defaultCommentsForm); }
+
+      const Forms = Object.keys(imgData.comments).reduce(( forms, id ) => {
+        const commentsMarker = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
+        
+        if (forms && commentsMarker) {
+          appendNewComment(imgData.comments[id], commentsMarker.parentElement);
+          return forms;
+        } else {
+          const newCommentsForm = parseNewCommentsForm(imgData.comments[id], id);
+          forms.appendChild(newCommentsForm);
+          return forms;
+        }
+      }, document.createDocumentFragment());
+
+      app.appendChild(Forms);
+    } else {
+    	while (app.hasChildNodes() && app.lastElementChild.classList.contains('comments__form')) {
+		    app.removeChild(app.lastElementChild);
+		  }
     }
-	};
+    return imgData;
+  };
 
 	////////////////////////////////////////////////////////////////////////
 
 	function crtNewCommentsFormNode( left, top ) {
-	  return el('form', { class: 'comments__form', style: `left: ${ left - 22 }px; top: ${ top - 15 }px;` }, [
+	  return el('form', { class: 'comments__form', style: `left: ${left}px; top: ${top}px;` }, [
 		 	el('span', { class: 'comments__marker' }, null),
 	    el('input', { type: 'checkbox', class: 'comments__marker-checkbox' }, null),
 	    el('div', { class: 'comments__body' }, [
@@ -455,73 +511,17 @@ function initApp() {
     }
   };
 
-  /********************************************************************* */
+	////////////////////////////////////////////////////////////////////////
 
-  function crtNewCommentsForm( left, top ) {
-  	const newCommentsForm = crtNewCommentsFormNode(left, top);
-      
-    newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
-    newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
-    return newCommentsForm;
-  };
-			
-  function parseNewCommentsForm( comment ) {
-		const newCommentsForm = crtNewCommentsForm(comment.left + 22, comment.top + 15),
-          [commentsBody] = newCommentsForm.getElementsByClassName('comments__body'),
-          [loader] = newCommentsForm.getElementsByClassName('loader'),
-					commentDate = getDate(comment.timestamp).replace(',', ''),
-          newComment = crtNewCommentNode(commentDate, comment.message);
+  const toggleCommentsShow = ( event ) => {
+	  if (event.target.classList.contains('menu__toggle')) {
+	  	hideComments(event.target);
 
-    newComment.dataset.timestamp = comment.timestamp; 
-    app.appendChild(newCommentsForm);
-    commentsBody.insertBefore(newComment, loader.parentElement);
-    return newCommentsForm;
-  };
-  
-  function appendNewComment( comment, commentsForm ) {
-    const [commentsBody] = commentsForm.getElementsByClassName('comments__body'),
-          comments = Array.from(commentsBody.getElementsByClassName('comment')),
-          commentDate = getDate(comment.timestamp).replace(',', ''),
-          newComment = crtNewCommentNode(commentDate, comment.message),
-          nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
-                
-    newComment.dataset.timestamp = comment.timestamp;
-    commentsBody.insertBefore(newComment, nextComment ? nextComment : comments[comments.length - 1]);
-  };
-
-  function renderComments( imgData ) {
-    const [defaultCommentsForm] = app.getElementsByClassName('comments__form'); //Удаляет дефолтную форму, но надо посмотреть как это на всех режимах будет работать
-    if (defaultCommentsForm) { app.removeChild(defaultCommentsForm); }
-
-    if (imgData.comments) {
-      const Forms = Object.keys(imgData.comments).reduce(( forms, id ) => {
-        imgData.comments[id].id = id;
-        
-        if (!forms) {
-          const newCommentsForm = parseNewCommentsForm(imgData.comments[id], id);
-          forms.appendChild(newCommentsForm);
-          return forms;
-        } 
-
-        const commentsMarker = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
-
-        if (commentsMarker) {
-          appendNewComment(imgData.comments[id], commentsMarker.parentElement);
-          return forms;
-        } else {
-          const newCommentsForm = parseNewCommentsForm(imgData.comments[id], id);
-          forms.appendChild(newCommentsForm);
-          return forms;
-        }
-      }, document.createDocumentFragment());
-
-      app.appendChild(Forms);
+	    const menuSettings = getSessionSettings('menuSettings');
+	    menuSettings.displayComments = menuSettings.displayComments ? '' : 'hidden';
+	    sessionStorage.menuSettings = JSON.stringify(menuSettings);
     }
-
-    return imgData;
-  };
-
-  /********************************************************************* */
+	};
 
   const toggleDisplayCommentsForm = ( commentsFormCheckbox, isClosedByBtn ) => {
   	if (commentsFormCheckbox) {
@@ -535,14 +535,14 @@ function initApp() {
 	  		commentsFormCheckbox.checked = commentsFormCheckbox.disabled = false;
 	  	} 
   	}
-  }
+  };
 
   const addNewCommentsForm = ( event ) => {
 	  if (event.target.classList.contains('current-image') && commentsBtn.dataset.state === 'selected') {
 	  	const prevCommentsFormCheckbox = app.querySelector('.comments__marker-checkbox[disabled=""]');
 	  	toggleDisplayCommentsForm(prevCommentsFormCheckbox, false);
 
-	  	const newCommentsForm = crtNewCommentsForm(event.pageX, event.pageY);
+	  	const newCommentsForm = crtNewCommentsForm(event.pageX - clickPointShifts.left, event.pageY - clickPointShifts.top);
 	  	app.appendChild(newCommentsForm);
       newCommentsForm.getElementsByClassName('comments__marker-checkbox')[0].checked = true;
       newCommentsForm.getElementsByClassName('comments__marker-checkbox')[0].disabled = true;
@@ -581,8 +581,7 @@ function initApp() {
   app.addEventListener('drop', uploadNewByDrop);
 
 	//Перемещение меню:
-	const moveMenu = throttle(( ...coords )=> dragMenu(...coords) );
-
+	const moveMenu = throttle(( ...coords ) => dragMenu(...coords) );
   document.addEventListener('mousedown', putMenu);
 	document.addEventListener('mousemove', ( event ) => moveMenu(event.pageX, event.pageY));
 	document.addEventListener('mouseup', dropMenu);
@@ -593,16 +592,16 @@ function initApp() {
 	//Копирование ссылки в режиме "Поделиться":
 	shareTools.addEventListener('click', copyURL);
 
+	//Переключатели отображаения комментариев на странице:
+	commentsTools.addEventListener('change', toggleCommentsShow);
+
 	//Работа с формой комментариев:
-	app.addEventListener('mousedown', addNewCommentsForm);
+	app.addEventListener('click', addNewCommentsForm);
   app.addEventListener('change', openCommentsForm);
   app.addEventListener('click', typeComment);
 	app.addEventListener('click', sendComment);
   app.addEventListener('keydown', sendCommentByEnter);
 	app.addEventListener('click', closeCommentsForm);
-  
-	//Переключатели отображаения комментариев на странице:
-	commentsTools.addEventListener('change', toggleCommentsShow);
 
 	//Инициализация и логика работы вебсокет соединения:
 	function initWSSConnection( id ) {
@@ -615,7 +614,7 @@ function initApp() {
 	      message: comment.message,
 	      timestamp: comment.timestamp
 	    };
-  	}
+  	};
 
     const updateApp = ( event ) => {
     	const wssResponse = JSON.parse(event.data);
@@ -626,7 +625,6 @@ function initApp() {
 			  break;
 
 			  case 'comment':  
-          //const imageSettings = getSessionSettings('imageSettings') ? getSessionSettings('imageSettings') : {};
           const imageSettings = getSessionSettings('imageSettings'),
           			commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
 
