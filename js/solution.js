@@ -13,13 +13,26 @@ function initApp() {
 				[shareBtn] = menu.getElementsByClassName('share'),
 				[shareTools] = menu.getElementsByClassName('share-tools'),
 				[urlTextarea] = shareTools.getElementsByClassName('menu__url'),
+        [defaultCommentsForm] = app.removeChild(app.getElementsByClassName('comments__form')[0]),
         [image] = app.getElementsByClassName('current-image'),
         [preloader] = app.getElementsByClassName('image-loader'),
         [errorMsg] = app.getElementsByClassName('error'),
         [errorHeader] = errorMsg.getElementsByClassName('error__header'),
       	[errorText] = errorMsg.getElementsByClassName('error__message');
-  
-  const apiURL = '//neto-api.herokuapp.com/pic';
+
+  const picture = (() => {
+    const picture = document.createElement('div'),
+          canvas = document.createElement('canvas'); 
+    
+    picture.id = 'pictureWrap';
+    picture.appendChild(image);
+
+    canvas.classList.add('current-image', 'drawing-canvas');
+    picture.insertBefore(canvas, image.nextElementSibling);
+
+    app.insertBefore(picture, menu.nextElementSibling);
+    return picture;
+  })();
 
   const clickPointShifts = (() => {
   	const pointShifts = {},
@@ -30,6 +43,10 @@ function initApp() {
   	return pointShifts;      
   })();
 
+  const apiURL = '//neto-api.herokuapp.com/pic';
+  const penWidth = 4;
+  let checkedColorBtn = menu.querySelector('.menu__color[checked=""]');
+  let [canvas] = picture.getElementsByClassName('drawing-canvas');
   let isLinkedFromShare = false;
 
   ////////////////////////////////////////////////////////////////////////
@@ -65,17 +82,37 @@ function initApp() {
 		}
   };
 
-	const saveImageSettings = ( imgData ) => {
+  const saveImageSettings = ( imgData ) => {
 		imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
     sessionStorage.imageSettings = JSON.stringify(imgData);
 		urlTextarea.value = getSessionSettings('imageSettings').path;
   };
 
+  function showElement( el ) {
+    el.style.display = '';
+  };
+
+  function hideElement( el ) {
+    el.style.display = 'none';
+  };
+
   const hideComments = ( radioBtn ) => {
-  	Array.from(app.getElementsByClassName('comments__form')).forEach(
-		  comments => comments.style.display = (radioBtn.value === 'on') ? '' : 'none'
+  	Array.from(app.getElementsByClassName('comments__form')).forEach(comments => {
+		  if (radioBtn.value === 'on') {
+		  	showElement(comments);
+		  } else {
+		  	hideElement(comments);
+		  }
+		  //comments.style.display = (radioBtn.value === 'on') ? '' : 'none'
+		}
 		);
   };
+
+  const getDate = ( timestamp ) => {
+	  const date = new Date(timestamp),
+	   			options = { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+	  return date.toLocaleString('ru-RU', options);
+	};
 
   const el = ( name, attrs, childs ) => {
  	  const element = document.createElement(name || 'div');
@@ -96,22 +133,8 @@ function initApp() {
   
     return element;
   };
- 
-	const getDate = ( timestamp ) => {
-	  const date = new Date(timestamp),
-	   			options = { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-	  return date.toLocaleString('ru-RU', options);
-	};
 
   ////////////////////////////////////////////////////////////////////////
-
-  const showElement = ( el ) => {
-    el.style.display = '';
-  };
-
-  const hideElement = ( el ) => {
-    el.style.display = 'none';
-  };
 
   const postError = ( header, message ) => {
   	errorHeader.textContent = header;
@@ -150,13 +173,16 @@ function initApp() {
   	switch(mode) {
 		  case 'initial':
 		    menu.dataset.state = 'initial';
-        app.removeChild(app.getElementsByClassName('comments__form')[0]);
 		    hideElement(burgerBtn);
+		    hideElement(canvas);
 		  break;
 
 		  case 'default':
 		    menu.dataset.state = 'default';
 		    Array.from(menu.querySelectorAll(`[data-state='selected']`)).forEach(el => el.dataset.state = '');
+		    console.log(menu.querySelector('.menu__color[checked=""]'))
+		    drawBtn.addEventListener('click', initDraw);
+		    hideElement(canvas);
 		  break;
 
 		  case 'selected':
@@ -185,7 +211,7 @@ function initApp() {
   	if (burgerBtn === event.target || burgerBtn === event.target.parentElement) {
   		selectMenuModeTo('default');
   	} else if (drawBtn === event.target || drawBtn === event.target.parentElement) {
-  		selectMenuModeTo('selected', 'draw');	
+  		selectMenuModeTo('selected', 'draw');
   	} else if (commentsBtn === event.target || commentsBtn === event.target.parentElement) {
   		selectMenuModeTo('selected', 'comments');
   	} else if (shareBtn === event.target || shareBtn === event.target.parentElement) {
@@ -215,7 +241,11 @@ function initApp() {
 	  	menu.style.left = menuSettings.left + 'px';
 			menu.style.top = menuSettings.top + 'px';
 			selectMenuModeTo(menuSettings.mode, menuSettings.selectItemType);
+			hideElement(canvas);
 
+			if (menuSettings.selectItemType === 'draw') {
+				image.addEventListener('load', initDraw);
+			} 
 			if (menuSettings.displayComments === 'hidden') {
       	commentsOff.checked = true;
       	hideComments(commentsOff);
@@ -355,36 +385,20 @@ function initApp() {
     }
 	};
         
-  const copyURL = () => {  
+  const copyURL = ( event ) => {  
     if (event.target.classList.contains('menu_copy')) {
       urlTextarea.select();
       urlTextarea.blur();
       checkSelectionResult();
       clearSelection();	
+    } else if (event.target === urlTextarea) {
+    	urlTextarea.focus();
+    	urlTextarea.select();
     }
   };
 
   ////////////////////////////////////////////////////////////////////////
   
-  function appendNewComment( comment, commentsForm ) {
-    const [commentsBody] = commentsForm.getElementsByClassName('comments__body'),
-          comments = Array.from(commentsBody.getElementsByClassName('comment')),
-          commentDate = getDate(comment.timestamp).replace(',', ''),
-          newComment = crtNewCommentNode(commentDate, comment.message),
-          nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
-                
-    newComment.dataset.timestamp = comment.timestamp;
-    commentsBody.insertBefore(newComment, ( nextComment ? nextComment : comments[comments.length - 1] ));
-  };
-
-  function crtNewCommentsForm( left, top ) {
-  	const newCommentsForm = crtNewCommentsFormNode(left, top);
-      
-    newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
-    newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
-    return newCommentsForm;
-  };
-
   function parseNewCommentsForm( comment ) {
 		const newCommentsForm = crtNewCommentsForm(comment.left, comment.top),
           [commentsBody] = newCommentsForm.getElementsByClassName('comments__body'),
@@ -393,16 +407,14 @@ function initApp() {
           newComment = crtNewCommentNode(commentDate, comment.message);
 
     newComment.dataset.timestamp = comment.timestamp; 
-    app.appendChild(newCommentsForm);
+    picture.appendChild(newCommentsForm);
     commentsBody.insertBefore(newComment, loader.parentElement);
     return newCommentsForm;
   };
 
   function renderComments( imgData ) {
+    //if (defaultCommentsForm) { app.removeChild(defaultCommentsForm); }
     if (imgData.comments) {
-    	const [defaultCommentsForm] = app.getElementsByClassName('comments__form'); //Удаляет дефолтную форму, при перезагрузке страницы
-  		if (defaultCommentsForm) { app.removeChild(defaultCommentsForm); }
-
       const Forms = Object.keys(imgData.comments).reduce(( forms, id ) => {
         const commentsMarker = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
         
@@ -416,16 +428,23 @@ function initApp() {
         }
       }, document.createDocumentFragment());
 
-      app.appendChild(Forms);
+      picture.appendChild(Forms);
     } else {
-    	while (app.hasChildNodes() && app.lastElementChild.classList.contains('comments__form')) {
-		    app.removeChild(app.lastElementChild);
-		  }
+    	while (picture.hasChildNodes() && picture.lastElementChild.classList.contains('comments__form')) {
+          picture.removeChild(picture.lastElementChild);
+        }
     }
     return imgData;
   };
 
 	////////////////////////////////////////////////////////////////////////
+
+	function crtNewCommentNode( date, message ) {
+		return el('div', { class: 'comment' }, [ 
+		  el('p', { class: 'comment__time' }, date), 
+		  el('p', { class: 'comment__message' }, message) 
+		]);
+	};
 
 	function crtNewCommentsFormNode( left, top ) {
 	  return el('form', { class: 'comments__form', style: `left: ${left}px; top: ${top}px;` }, [
@@ -442,12 +461,24 @@ function initApp() {
     ]);	       
 	};
   
-	function crtNewCommentNode( date, message ) {
-		return el('div', { class: 'comment' }, [ 
-		  el('p', { class: 'comment__time' }, date), 
-		  el('p', { class: 'comment__message' }, message) 
-		]);
-	};
+  function crtNewCommentsForm( left, top ) {
+  	const newCommentsForm = crtNewCommentsFormNode(left, top);
+      
+    newCommentsForm.firstElementChild.dataset.left = parseInt(newCommentsForm.style.left);
+    newCommentsForm.firstElementChild.dataset.top = parseInt(newCommentsForm.style.top);
+    return newCommentsForm;
+  };
+
+  function appendNewComment( comment, commentsForm ) {
+    const [commentsBody] = commentsForm.getElementsByClassName('comments__body'),
+          comments = Array.from(commentsBody.getElementsByClassName('comment')),
+          commentDate = getDate(comment.timestamp).replace(',', ''),
+          newComment = crtNewCommentNode(commentDate, comment.message),
+          nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
+                
+    newComment.dataset.timestamp = comment.timestamp;
+    commentsBody.insertBefore(newComment, ( nextComment ? nextComment : comments[comments.length - 1] ));
+  };
   
   function loadComment( imgData, left, top ) {
   	//if (!imgData) { return ; }
@@ -506,7 +537,7 @@ function initApp() {
   const sendCommentByEnter = ( event ) => {
     if (!event.repeat && event.code === 'Enter' && event.target.classList.contains('comments__input')) {
       const submit = event.target.nextElementSibling.nextElementSibling; 
-      submit.dispatchEvent(new MouseEvent('click', event));
+      submit.dispatchEvent( new MouseEvent('click', event) );
       event.target.blur();
     }
   };
@@ -528,7 +559,7 @@ function initApp() {
   		const [comment] = commentsFormCheckbox.parentElement.getElementsByClassName('comment');	
 
   		if (comment.firstElementChild.classList.contains('loader')) {
-	      app.removeChild(commentsFormCheckbox.parentElement);
+	      picture.removeChild(commentsFormCheckbox.parentElement);
 	  	}
   		if (!isClosedByBtn || !comment.firstElementChild.classList.contains('loader')) {
   			commentsFormCheckbox.parentElement.style.zIndex = '';
@@ -539,11 +570,11 @@ function initApp() {
 
   const addNewCommentsForm = ( event ) => {
 	  if (event.target.classList.contains('current-image') && commentsBtn.dataset.state === 'selected') {
-	  	const prevCommentsFormCheckbox = app.querySelector('.comments__marker-checkbox[disabled=""]');
+	  	const prevCommentsFormCheckbox = picture.querySelector('.comments__marker-checkbox[disabled=""]');
 	  	toggleDisplayCommentsForm(prevCommentsFormCheckbox, false);
 
 	  	const newCommentsForm = crtNewCommentsForm(event.pageX - clickPointShifts.left, event.pageY - clickPointShifts.top);
-	  	app.appendChild(newCommentsForm);
+	  	picture.appendChild(newCommentsForm);
       newCommentsForm.getElementsByClassName('comments__marker-checkbox')[0].checked = true;
       newCommentsForm.getElementsByClassName('comments__marker-checkbox')[0].disabled = true;
       newCommentsForm.style.zIndex = '5';
@@ -552,7 +583,7 @@ function initApp() {
 
   const openCommentsForm = ( event ) => {
   	if (event.target.classList.contains('comments__marker-checkbox') && event.target.checked) {
-  		const prevCommentsFormCheckbox = app.querySelector('.comments__marker-checkbox[disabled=""]');
+  		const prevCommentsFormCheckbox = picture.querySelector('.comments__marker-checkbox[disabled=""]');
 
   		toggleDisplayCommentsForm(prevCommentsFormCheckbox, false);
   		event.target.disabled = true;
@@ -574,6 +605,102 @@ function initApp() {
   };
 
   ////////////////////////////////////////////////////////////////////////
+
+  function initDraw( event ) {
+  	drawBtn.removeEventListener('click', initDraw);
+
+  	const canvasCtx = canvas.getContext('2d');
+    canvas.width = image.clientWidth;
+    canvas.height = image.clientHeight;
+    canvasCtx.strokeStyle = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor;
+    canvasCtx.lineWidth = penWidth;
+    showElement(canvas);
+      
+    let strokes = [],
+        drawing = false,
+        needsRepaint = false;
+
+    function drawPoint( color, point ) {
+      canvasCtx.beginPath();
+      canvasCtx.fillStyle = color;
+      canvasCtx.arc(...point, penWidth / 2, 0, 2 * Math.PI);
+      canvasCtx.fill();
+    }
+
+    function drawStroke( color, points ) {
+      canvasCtx.beginPath();
+      canvasCtx.lineWidth = penWidth;
+      canvasCtx.lineCap = canvasCtx.lineJoin = 'round';
+      canvasCtx.strokeStyle = color;
+      canvasCtx.moveTo(...points[0]);
+      for (let i = 1; i < points.length - 1; i++) {
+        canvasCtx.lineTo(...points[i], ...points[i + 1]);
+      }
+      canvasCtx.stroke();
+    }
+
+    function makePoint( x, y ) {
+      return [x, y];
+    };
+
+    function repaint() {
+      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+      strokes.forEach(( [color, ...points] ) => { 
+        drawPoint(color, points[0]);
+        drawStroke(color, points);
+      });
+    }
+
+    function tick() {
+      if (needsRepaint) {
+        repaint();
+        needsRepaint = false;
+      }
+      window.requestAnimationFrame(tick);
+    };
+
+    tick();
+
+    canvas.addEventListener('mousedown', ( event ) => {
+      drawing = true;
+
+      const stroke = [canvasCtx.strokeStyle];
+      stroke.push(makePoint(event.offsetX, event.offsetY));
+      strokes.push(stroke);
+      needsRepaint = true;
+    });
+    canvas.addEventListener('mouseup', ( event ) => {
+      drawing = false;
+      //sendCanvas();
+    });
+    canvas.addEventListener('mousemove', ( event ) => {
+      if (drawing) {
+        const point = makePoint(event.offsetX, event.offsetY);
+        strokes[strokes.length - 1].push(point);
+        needsRepaint = true;
+      }
+    });
+    canvas.addEventListener('mouseleave', ( event ) => drawing = false);
+
+    ///////////////////////////////////////////////////////////////////////////////
+
+    const changeColor = ( event ) => {
+      if (event.target.checked) { 
+      	//menu.querySelector('.menu__color[checked=""]').removeAttribute('checked');
+      	checkedColorBtn.removeAttribute('checked');
+      	checkedColorBtn = event.target;
+      	event.target.setAttribute('checked', '');
+      	
+        canvasCtx.strokeStyle = getComputedStyle(event.target.nextElementSibling).backgroundColor;
+        canvasCtx.globalCompositeOperation = 'source-over';
+      }
+    };
+
+    drawTools.addEventListener('change', changeColor);
+  };
+
+  ///////////////////////////////////////////////////////////////////////
 	
   //Загрузка файла на сервер:
 	menu.addEventListener('click', uploadNewByInput);
@@ -596,12 +723,15 @@ function initApp() {
 	commentsTools.addEventListener('change', toggleCommentsShow);
 
 	//Работа с формой комментариев:
-	app.addEventListener('click', addNewCommentsForm);
-  app.addEventListener('change', openCommentsForm);
-  app.addEventListener('click', typeComment);
-	app.addEventListener('click', sendComment);
-  app.addEventListener('keydown', sendCommentByEnter);
-	app.addEventListener('click', closeCommentsForm);
+	picture.addEventListener('click', addNewCommentsForm);
+  picture.addEventListener('change', openCommentsForm);
+  picture.addEventListener('click', typeComment);
+	picture.addEventListener('click', sendComment);
+  picture.addEventListener('keydown', sendCommentByEnter);
+	picture.addEventListener('click', closeCommentsForm);
+
+  //Инициализация режима рисования:
+  drawBtn.addEventListener('click', initDraw);
 
 	//Инициализация и логика работы вебсокет соединения:
 	function initWSSConnection( id ) {
@@ -638,7 +768,7 @@ function initApp() {
 			  	if (commentsMarker) {
 			  		loadComment(imageSettings, wssResponse.comment.left, wssResponse.comment.top);
 			    } else {
-					  app.appendChild(crtNewCommentsForm(wssResponse.comment.left, wssResponse.comment.top));	
+					  picture.appendChild(crtNewCommentsForm(wssResponse.comment.left, wssResponse.comment.top));	
 			      loadComment(imageSettings, wssResponse.comment.left, wssResponse.comment.top);
 			    }
 			  break;
