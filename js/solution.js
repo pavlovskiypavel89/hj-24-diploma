@@ -45,9 +45,9 @@ function initApp() {
 
   const apiURL = '//neto-api.herokuapp.com/pic';
   const penWidth = 4;
-  let checkedColorBtn = menu.querySelector('.menu__color[checked=""]');
-  let [canvas] = picture.getElementsByClassName('drawing-canvas');
-  let isLinkedFromShare = false;
+  let checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
+		  [canvas] = picture.getElementsByClassName('drawing-canvas'),
+		  isLinkedFromShare = false;
 
   ////////////////////////////////////////////////////////////////////////
 
@@ -83,9 +83,10 @@ function initApp() {
   };
 
   const saveImageSettings = ( imgData ) => {
-		imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
+		urlTextarea.value = imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
     sessionStorage.imageSettings = JSON.stringify(imgData);
-		urlTextarea.value = getSessionSettings('imageSettings').path;
+		//urlTextarea.value = getSessionSettings('imageSettings').path;
+		//window.location.replace(imgData.path);
   };
 
   function showElement( el ) {
@@ -142,26 +143,29 @@ function initApp() {
 	  showElement(errorMsg);
   };
 
-  const changeUI = () => {
+  const changeUI = (imgData) => {
   	image.dataset.status = 'load';
 	  hideElement(preloader);
+
 		selectMenuModeTo('selected', isLinkedFromShare ? 'comments' : 'share');
-		
+		renderComments(imgData);
+		saveImageSettings(imgData);
+
 		isLinkedFromShare = false;
   };
 
   const showImage = ( imgData ) => {
-  	image.addEventListener('load', changeUI);
+  	image.addEventListener('load', () => changeUI(imgData));
 		image.src = imgData.url;
-		return imgData;
+		//return imgData;
  	};
 
   const loadImage = ( { id } ) => {
   	fetch('https:' + apiURL + '/' + id)
   	.then(checkResponseStatus)
 		.then(showImage)
-    .then(renderComments) //проверить корректность, скорее всего нормально 
-		.then(saveImageSettings)
+    //.then(renderComments) //проверить корректность, скорее всего нормально 
+		//.then(saveImageSettings)
 		.catch(err => postError(errorHeader.textContent, err.message));
 
 		initWSSConnection(id);
@@ -180,7 +184,6 @@ function initApp() {
 		  case 'default':
 		    menu.dataset.state = 'default';
 		    Array.from(menu.querySelectorAll(`[data-state='selected']`)).forEach(el => el.dataset.state = '');
-		    console.log(menu.querySelector('.menu__color[checked=""]'))
 		    drawBtn.addEventListener('click', initDraw);
 		    hideElement(canvas);
 		  break;
@@ -225,6 +228,7 @@ function initApp() {
 
 		image.src = '';			
 	  if (imageSettings) {
+	  	image.dataset.status = 'load';
       image.src = imageSettings.url;
       urlTextarea.value = imageSettings.path;
       renderComments(imageSettings);
@@ -431,8 +435,8 @@ function initApp() {
       picture.appendChild(Forms);
     } else {
     	while (picture.hasChildNodes() && picture.lastElementChild.classList.contains('comments__form')) {
-          picture.removeChild(picture.lastElementChild);
-        }
+        picture.removeChild(picture.lastElementChild);
+      }
     }
     return imgData;
   };
@@ -691,7 +695,7 @@ function initApp() {
       	checkedColorBtn.removeAttribute('checked');
       	checkedColorBtn = event.target;
       	event.target.setAttribute('checked', '');
-      	
+
         canvasCtx.strokeStyle = getComputedStyle(event.target.nextElementSibling).backgroundColor;
         canvasCtx.globalCompositeOperation = 'source-over';
       }
