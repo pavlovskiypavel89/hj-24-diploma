@@ -1,24 +1,24 @@
 'use strict';
 function initApp() {
 	const [app] = document.getElementsByClassName('app'),
-				[menu] = app.getElementsByClassName('menu'),
-				[burgerBtn] = menu.getElementsByClassName('burger'),
-				[newImgBtn] = menu.getElementsByClassName('new'),
-				[commentsBtn] = menu.getElementsByClassName('comments'),
-				[commentsTools] = menu.getElementsByClassName('comments-tools'),
-				commentsOff = document.getElementById('comments-off'),
-				[marker] = app.getElementsByClassName('comments__marker'),
-				[drawBtn] = menu.getElementsByClassName('draw'),
-				[drawTools] = menu.getElementsByClassName('draw-tools'),
-				[shareBtn] = menu.getElementsByClassName('share'),
-				[shareTools] = menu.getElementsByClassName('share-tools'),
-				[urlTextarea] = shareTools.getElementsByClassName('menu__url'),
-        [defaultCommentsForm] = app.removeChild(app.getElementsByClassName('comments__form')[0]),
-        [image] = app.getElementsByClassName('current-image'),
-        [preloader] = app.getElementsByClassName('image-loader'),
-        [errorMsg] = app.getElementsByClassName('error'),
-        [errorHeader] = errorMsg.getElementsByClassName('error__header'),
-      	[errorText] = errorMsg.getElementsByClassName('error__message');
+	      [menu] = app.getElementsByClassName('menu'),
+	      [burgerBtn] = menu.getElementsByClassName('burger'),
+	      [newImgBtn] = menu.getElementsByClassName('new'),
+	      [commentsBtn] = menu.getElementsByClassName('comments'),
+	      [commentsTools] = menu.getElementsByClassName('comments-tools'),
+	      commentsOff = document.getElementById('comments-off'),
+	      [marker] = app.getElementsByClassName('comments__marker'),
+	      [drawBtn] = menu.getElementsByClassName('draw'),
+	      [drawTools] = menu.getElementsByClassName('draw-tools'),
+	      [shareBtn] = menu.getElementsByClassName('share'),
+	      [shareTools] = menu.getElementsByClassName('share-tools'),
+	      [urlTextarea] = shareTools.getElementsByClassName('menu__url'),
+	      [defaultCommentsForm] = app.removeChild(app.getElementsByClassName('comments__form')[0]),
+	      [image] = app.getElementsByClassName('current-image'),
+	      [preloader] = app.getElementsByClassName('image-loader'),
+	      [errorMsg] = app.getElementsByClassName('error'),
+              [errorHeader] = errorMsg.getElementsByClassName('error__header'),
+	      [errorText] = errorMsg.getElementsByClassName('error__message');
 
   const picture = (() => {
     const picture = document.createElement('div'),
@@ -36,8 +36,8 @@ function initApp() {
 
   const clickPointShifts = (() => {
   	const pointShifts = {},
-  				markerBounds = marker.getBoundingClientRect(),
-  	      formBounds = marker.parentElement.getBoundingClientRect();    
+	markerBounds = marker.getBoundingClientRect(),
+        formBounds = marker.parentElement.getBoundingClientRect();    
   	pointShifts.left = (markerBounds.left - formBounds.left) + markerBounds.width / 2;       
   	pointShifts.top = (markerBounds.top - formBounds.top) + markerBounds.height;
   	return pointShifts;      
@@ -46,8 +46,8 @@ function initApp() {
   const apiURL = '//neto-api.herokuapp.com/pic';
   const penWidth = 4;
   let checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
-		  [canvas] = picture.getElementsByClassName('drawing-canvas'),
-		  isLinkedFromShare = false;
+			[canvas] = picture.getElementsByClassName('drawing-canvas'),
+			isLinkedFromShare = false;
 
   ////////////////////////////////////////////////////////////////////////
 
@@ -64,29 +64,27 @@ function initApp() {
 
   const getSessionSettings = ( key ) => {
   	try {
-			if (sessionStorage[key]) { 
-				return JSON.parse(sessionStorage[key]);
-			}
-		} catch (err) {
-			console.error(`${err}`);
-		}
+	  if (sessionStorage[key]) { 
+		return JSON.parse(sessionStorage[key]);
+	  }
+	} catch (err) {
+		console.error(`${err}`);
+	}
 	};
 
 	const checkResponseStatus = ( resp ) => {
   	if (200 <= resp.status && resp.status < 300) {
-			return resp.json();
-		} else {
-			hideElement(preloader);
-			errorHeader.textContent = 'Ошибка: ' + resp.status;
-			throw new Error(`${resp.statusText}`);
-		}
+		return resp.json();
+	} else {
+		errorHeader.textContent = 'Ошибка: ' + resp.status;
+		throw new Error(`${resp.statusText}`);
+	}
   };
 
   const saveImageSettings = ( imgData ) => {
-		urlTextarea.value = imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
+    urlTextarea.value = imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
     sessionStorage.imageSettings = JSON.stringify(imgData);
-		//urlTextarea.value = getSessionSettings('imageSettings').path;
-		//window.location.replace(imgData.path);
+    //urlTextarea.value = getSessionSettings('imageSettings').path;
   };
 
   function showElement( el ) {
@@ -143,32 +141,25 @@ function initApp() {
 	  showElement(errorMsg);
   };
 
-  const changeUI = (imgData) => {
-  	image.dataset.status = 'load';
-	  hideElement(preloader);
-
-		selectMenuModeTo('selected', isLinkedFromShare ? 'comments' : 'share');
-		renderComments(imgData);
-		saveImageSettings(imgData);
-
-		isLinkedFromShare = false;
-  };
-
   const showImage = ( imgData ) => {
-  	image.addEventListener('load', () => changeUI(imgData));
-		image.src = imgData.url;
-		//return imgData;
+		image.dataset.status = 'load';
+    image.src = imgData.url;
+		saveImageSettings(imgData);
+    window.history.pushState({path: urlTextarea.value}, '', urlTextarea.value);
+		image.addEventListener('load', () => {
+      hideElement(preloader);
+      selectMenuModeTo('selected', isLinkedFromShare ? 'comments' : 'share');
+			renderComments(imgData);
+      initWSSConnection(imgData.id);
+      isLinkedFromShare = false;
+		}); 
  	};
 
   const loadImage = ( { id } ) => {
   	fetch('https:' + apiURL + '/' + id)
   	.then(checkResponseStatus)
 		.then(showImage)
-    //.then(renderComments) //проверить корректность, скорее всего нормально 
-		//.then(saveImageSettings)
 		.catch(err => postError(errorHeader.textContent, err.message));
-
-		initWSSConnection(id);
   };
 
   ////////////////////////////////////////////////////////////////////////
@@ -495,7 +486,7 @@ function initApp() {
 
 	    if (comment.left === left && comment.top === top && !isPostedComment) {
 	    	appendNewComment(comment, commentForm);
-	    	loader.style.display = 'none';
+        hideElement(loader);
 	    	break ;
 	    }
 	  }
@@ -532,7 +523,7 @@ function initApp() {
             left = parseInt(crntCommentsForm.style.left),
             top = parseInt(crntCommentsForm.style.top);
       
-      loader.style.display = '';
+      showElement(loader);
       postComment(input.value ? input.value: '\n', left, top);
       input.value = '';
     } 
