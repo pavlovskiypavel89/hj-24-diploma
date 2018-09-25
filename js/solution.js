@@ -1,24 +1,24 @@
 'use strict';
 function initApp() {
 	const [app] = document.getElementsByClassName('app'),
-	      [menu] = app.getElementsByClassName('menu'),
-	      [burgerBtn] = menu.getElementsByClassName('burger'),
-	      [newImgBtn] = menu.getElementsByClassName('new'),
-	      [commentsBtn] = menu.getElementsByClassName('comments'),
-	      [commentsTools] = menu.getElementsByClassName('comments-tools'),
-	      commentsOff = document.getElementById('comments-off'),
-	      [marker] = app.getElementsByClassName('comments__marker'),
-	      [drawBtn] = menu.getElementsByClassName('draw'),
-	      [drawTools] = menu.getElementsByClassName('draw-tools'),
-	      [shareBtn] = menu.getElementsByClassName('share'),
-	      [shareTools] = menu.getElementsByClassName('share-tools'),
-	      [urlTextarea] = shareTools.getElementsByClassName('menu__url'),
-	      [defaultCommentsForm] = app.removeChild(app.getElementsByClassName('comments__form')[0]),
-	      [image] = app.getElementsByClassName('current-image'),
-	      [preloader] = app.getElementsByClassName('image-loader'),
-	      [errorMsg] = app.getElementsByClassName('error'),
-              [errorHeader] = errorMsg.getElementsByClassName('error__header'),
-	      [errorText] = errorMsg.getElementsByClassName('error__message');
+				[menu] = app.getElementsByClassName('menu'),
+				[burgerBtn] = menu.getElementsByClassName('burger'),
+				[newImgBtn] = menu.getElementsByClassName('new'),
+				[commentsBtn] = menu.getElementsByClassName('comments'),
+				[commentsTools] = menu.getElementsByClassName('comments-tools'),
+				commentsOff = document.getElementById('comments-off'),
+				[marker] = app.getElementsByClassName('comments__marker'),
+				[drawBtn] = menu.getElementsByClassName('draw'),
+				[drawTools] = menu.getElementsByClassName('draw-tools'),
+				[shareBtn] = menu.getElementsByClassName('share'),
+				[shareTools] = menu.getElementsByClassName('share-tools'),
+				[urlTextarea] = shareTools.getElementsByClassName('menu__url'),
+        [defaultCommentsForm] = app.removeChild(app.getElementsByClassName('comments__form')[0]),
+        [image] = app.getElementsByClassName('current-image'),
+        [preloader] = app.getElementsByClassName('image-loader'),
+        [errorMsg] = app.getElementsByClassName('error'),
+        [errorHeader] = errorMsg.getElementsByClassName('error__header'),
+      	[errorText] = errorMsg.getElementsByClassName('error__message');
 
   const picture = (() => {
     const picture = document.createElement('div'),
@@ -36,8 +36,8 @@ function initApp() {
 
   const clickPointShifts = (() => {
   	const pointShifts = {},
-	markerBounds = marker.getBoundingClientRect(),
-        formBounds = marker.parentElement.getBoundingClientRect();    
+  				markerBounds = marker.getBoundingClientRect(),
+  	      formBounds = marker.parentElement.getBoundingClientRect();    
   	pointShifts.left = (markerBounds.left - formBounds.left) + markerBounds.width / 2;       
   	pointShifts.top = (markerBounds.top - formBounds.top) + markerBounds.height;
   	return pointShifts;      
@@ -45,46 +45,51 @@ function initApp() {
 
   const apiURL = '//neto-api.herokuapp.com/pic';
   const penWidth = 4;
-  let checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
-			[canvas] = picture.getElementsByClassName('drawing-canvas'),
-			isLinkedFromShare = false;
+  let socket,
+      [canvas] = picture.getElementsByClassName('drawing-canvas'),
+      checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
+      isLinkedFromShare = false;
 
   ////////////////////////////////////////////////////////////////////////
 
-  const throttle = ( cb ) => {
+  const throttle = ( cb, type ) => {
     let isWaiting = false;
     return function (...args) {
       if (!isWaiting) {
         cb.apply(this, args);
         isWaiting = true;
-        requestAnimationFrame(() => isWaiting = false);
+        if (type === 'animation') {
+          requestAnimationFrame(() => isWaiting = false);
+        } else {
+          setTimeout(() => isWaiting = false, 1000);
+        }
       }
     }
   };
 
   const getSessionSettings = ( key ) => {
   	try {
-	  if (sessionStorage[key]) { 
-		return JSON.parse(sessionStorage[key]);
-	  }
-	} catch (err) {
-		console.error(`${err}`);
-	}
+			if (sessionStorage[key]) { 
+				return JSON.parse(sessionStorage[key]);
+			}
+		} catch (err) {
+			console.error(`${err}`);
+		}
 	};
 
 	const checkResponseStatus = ( resp ) => {
   	if (200 <= resp.status && resp.status < 300) {
-		return resp.json();
-	} else {
-		errorHeader.textContent = 'Ошибка: ' + resp.status;
-		throw new Error(`${resp.statusText}`);
-	}
+			return resp.json();
+		} else {
+			errorHeader.textContent = 'Ошибка: ' + resp.status;
+			throw new Error(`${resp.statusText}`);
+		}
   };
 
   const saveImageSettings = ( imgData ) => {
-    urlTextarea.value = imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
+		urlTextarea.value = imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
     sessionStorage.imageSettings = JSON.stringify(imgData);
-    //urlTextarea.value = getSessionSettings('imageSettings').path;
+		//urlTextarea.value = getSessionSettings('imageSettings').path;
   };
 
   function showElement( el ) {
@@ -221,6 +226,7 @@ function initApp() {
 	  if (imageSettings) {
 	  	image.dataset.status = 'load';
       image.src = imageSettings.url;
+      urlTextarea.removeAttribute('value');
       urlTextarea.value = imageSettings.path;
       renderComments(imageSettings);
       initWSSConnection(imageSettings.id);
@@ -309,9 +315,8 @@ function initApp() {
   		draggedSettings = null;
 
 	const putMenu = ( event ) => {
-		event.preventDefault();
 		if (event.target.classList.contains('drag')) {
-			dragged = event.target.parentElement;
+			dragged = event.currentTarget;
 			
 			const draggedBounds = event.target.getBoundingClientRect(),
 			      draggedCSS = getComputedStyle(dragged);
@@ -344,7 +349,7 @@ function initApp() {
 		}
 	};
 
-	const dropMenu = ( event ) => {
+	const dropMenu = () => {
 	  if (dragged) { 
 	  	const menuSettings = getSessionSettings('menuSettings');
 	  	
@@ -354,7 +359,7 @@ function initApp() {
 				menuSettings.top = dragged.offsetTop;
 				sessionStorage.menuSettings = JSON.stringify(menuSettings);
 			} else {
-				ssessionStorage.menuSettings = JSON.stringify({ left: dragged.offsetLeft, top: dragged.offsetTop });
+				sessionStorage.menuSettings = JSON.stringify({ left: dragged.offsetLeft, top: dragged.offsetTop });
 			}
 	  	dragged = null; 
 	  }
@@ -386,10 +391,7 @@ function initApp() {
       urlTextarea.blur();
       checkSelectionResult();
       clearSelection();	
-    } else if (event.target === urlTextarea) {
-    	urlTextarea.focus();
-    	urlTextarea.select();
-    }
+    } 
   };
 
   ////////////////////////////////////////////////////////////////////////
@@ -601,6 +603,10 @@ function initApp() {
 
   ////////////////////////////////////////////////////////////////////////
 
+  function sendCanvas() {
+    canvas.toBlob(blob => socket.send(blob));
+  }
+
   function initDraw( event ) {
   	drawBtn.removeEventListener('click', initDraw);
 
@@ -667,7 +673,7 @@ function initApp() {
     });
     canvas.addEventListener('mouseup', ( event ) => {
       drawing = false;
-      //sendCanvas();
+      throttle(sendCanvas)();
     });
     canvas.addEventListener('mousemove', ( event ) => {
       if (drawing) {
@@ -703,16 +709,17 @@ function initApp() {
   app.addEventListener('drop', uploadNewByDrop);
 
 	//Перемещение меню:
-	const moveMenu = throttle(( ...coords ) => dragMenu(...coords) );
-  document.addEventListener('mousedown', putMenu);
-	document.addEventListener('mousemove', ( event ) => moveMenu(event.pageX, event.pageY));
-	document.addEventListener('mouseup', dropMenu);
+	const moveMenu = throttle( (...coords ) => dragMenu(...coords), 'animation' );
+  menu.addEventListener('mousedown', putMenu);
+	app.addEventListener('mousemove', ( event ) => moveMenu(event.pageX, event.pageY));
+	app.addEventListener('mouseup', dropMenu);
 
 	//Переключение пунктов меню:
 	menu.addEventListener('click', selectMenuMode);
 
 	//Копирование ссылки в режиме "Поделиться":
 	shareTools.addEventListener('click', copyURL);
+  app.addEventListener('click', ( event ) => {if (event.target !== urlTextarea) { urlTextarea.blur(); } });
 
 	//Переключатели отображаения комментариев на странице:
 	commentsTools.addEventListener('change', toggleCommentsShow);
@@ -730,7 +737,7 @@ function initApp() {
 
 	//Инициализация и логика работы вебсокет соединения:
 	function initWSSConnection( id ) {
-  	const socket = new WebSocket('wss:' + apiURL + '/' + id);
+  	socket = new WebSocket('wss:' + apiURL + '/' + id);
 
   	const addCommentInDirectory = (	comment, directory ) => {
   		directory[comment.id] = {
@@ -746,10 +753,10 @@ function initApp() {
 
     	switch(wssResponse.event) {
 			  case 'pic':
-			  	//console.log(wssResponse.pic);
+			  	console.log(wssResponse.pic);
 			  break;
 
-			  case 'comment':  
+			  case 'comment': 
           const imageSettings = getSessionSettings('imageSettings'),
           			commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
 
@@ -769,7 +776,7 @@ function initApp() {
 			  break;
 
 			  case 'mask':
-			  	//console.log(wssResponse.mask);
+			  	console.log(wssResponse.url);
 			  break;
 			}
     };
