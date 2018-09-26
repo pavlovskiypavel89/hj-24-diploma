@@ -45,6 +45,7 @@ function initApp() {
 
   const apiURL = '//neto-api.herokuapp.com/pic';
   const penWidth = 4;
+  let arr = [];
   let socket,
       [canvas] = picture.getElementsByClassName('drawing-canvas'),
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
@@ -52,16 +53,16 @@ function initApp() {
 
   ////////////////////////////////////////////////////////////////////////
 
-  const throttle = ( cb, type ) => {
+  const throttle = ( cb, isAnimation, delay ) => {
     let isWaiting = false;
     return function (...args) {
       if (!isWaiting) {
         cb.apply(this, args);
         isWaiting = true;
-        if (type === 'animation') {
-          requestAnimationFrame(() => isWaiting = false);
+        if (isAnimation) {
+        	requestAnimationFrame(() => isWaiting = false);
         } else {
-          setTimeout(() => isWaiting = false, 1000);
+        	setTimeout(() => isWaiting = false, delay);
         }
       }
     }
@@ -608,9 +609,9 @@ function initApp() {
   }
 
   function initDraw( event ) {
-  	drawBtn.removeEventListener('click', initDraw);
+    drawBtn.removeEventListener('click', initDraw);
 
-  	const canvasCtx = canvas.getContext('2d');
+    const canvasCtx = canvas.getContext('2d');
     canvas.width = image.clientWidth;
     canvas.height = image.clientHeight;
     canvasCtx.strokeStyle = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor;
@@ -618,21 +619,23 @@ function initApp() {
     showElement(canvas);
       
     let strokes = [],
+        penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
         drawing = false,
-        needsRepaint = false;
+        needsSendMask = null,
+        needsRendering = false;
 
-    function drawPoint( color, point ) {
+    function drawPoint( point ) {
       canvasCtx.beginPath();
-      canvasCtx.fillStyle = color;
+      canvasCtx.fillStyle = penColor;
       canvasCtx.arc(...point, penWidth / 2, 0, 2 * Math.PI);
       canvasCtx.fill();
     }
 
-    function drawStroke( color, points ) {
+    function drawStroke( points ) {
       canvasCtx.beginPath();
       canvasCtx.lineWidth = penWidth;
       canvasCtx.lineCap = canvasCtx.lineJoin = 'round';
-      canvasCtx.strokeStyle = color;
+      canvasCtx.strokeStyle = penColor;
       canvasCtx.moveTo(...points[0]);
       for (let i = 1; i < points.length - 1; i++) {
         canvasCtx.lineTo(...points[i], ...points[i + 1]);
@@ -644,56 +647,76 @@ function initApp() {
       return [x, y];
     };
 
-    function repaint() {
-      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-
-      strokes.forEach(( [color, ...points] ) => { 
-        drawPoint(color, points[0]);
-        drawStroke(color, points);
+    function draw() {
+      strokes.forEach(stroke => { 
+        drawPoint(stroke[0]);
+        drawStroke(stroke);
       });
     }
 
-    function tick() {
-      if (needsRepaint) {
-        repaint();
-        needsRepaint = false;
-      }
-      window.requestAnimationFrame(tick);
-    };
+	  const sendMask = () => {
+	  	needsSendMask = needsSendMask !== null ? true : false; 
+	  	if (needsSendMask) {
+	  		console.log('2'); 
+	  		console.log(needsSendMask);
+	  		/*
+	  		canvasCtx.clearRect(0, 0, canvas.width, canvas.height); 
+	  		strokes = [[]];
+	  		*/
+	  	}
+	  };
 
-    tick();
+  	const throttleSendMask = throttle(sendMask, false, 2000);
+
+    (function tick() {
+      if (needsRendering) {
+      	draw();
+        needsRendering = false;
+
+      	if (!needsSendMask) {
+          throttleSendMask();
+        } else {
+          needsSendMask = false; 
+        }
+      }
+
+      window.requestAnimationFrame(tick);
+    })();
 
     canvas.addEventListener('mousedown', ( event ) => {
       drawing = true;
 
-      const stroke = [canvasCtx.strokeStyle];
+      const stroke = [];
       stroke.push(makePoint(event.offsetX, event.offsetY));
       strokes.push(stroke);
-      needsRepaint = true;
+      needsRendering = true;
     });
-    canvas.addEventListener('mouseup', ( event ) => {
+
+    canvas.addEventListener('mouseup', () => {
       drawing = false;
-      throttle(sendCanvas)();
+      needsSendMask = null;
+      strokes = [];
     });
+    
     canvas.addEventListener('mousemove', ( event ) => {
-      if (drawing) {
-        const point = makePoint(event.offsetX, event.offsetY);
-        strokes[strokes.length - 1].push(point);
-        needsRepaint = true;
-      }
+      if (drawing) {  
+        const stroke = strokes[0]; 
+        stroke.push(makePoint(event.offsetX, event.offsetY));
+        needsRendering = true;
+			}
     });
-    canvas.addEventListener('mouseleave', ( event ) => drawing = false);
+
+    canvas.addEventListener('mouseleave', () => drawing = false);
 
     ///////////////////////////////////////////////////////////////////////////////
 
     const changeColor = ( event ) => {
       if (event.target.checked) { 
-      	//menu.querySelector('.menu__color[checked=""]').removeAttribute('checked');
       	checkedColorBtn.removeAttribute('checked');
       	checkedColorBtn = event.target;
       	event.target.setAttribute('checked', '');
 
-        canvasCtx.strokeStyle = getComputedStyle(event.target.nextElementSibling).backgroundColor;
+        canvasCtx.strokeStyle = canvasCtx.fillStyle = penColor = getComputedStyle(event.target.nextElementSibling).backgroundColor;
         canvasCtx.globalCompositeOperation = 'source-over';
       }
     };
@@ -709,8 +732,8 @@ function initApp() {
   app.addEventListener('drop', uploadNewByDrop);
 
 	//Перемещение меню:
-	const moveMenu = throttle( (...coords ) => dragMenu(...coords), 'animation' );
-  menu.addEventListener('mousedown', putMenu);
+	const moveMenu = throttle((...coords ) => dragMenu(...coords), false);
+        menu.addEventListener('mousedown', putMenu);
 	app.addEventListener('mousemove', ( event ) => moveMenu(event.pageX, event.pageY));
 	app.addEventListener('mouseup', dropMenu);
 
@@ -753,7 +776,7 @@ function initApp() {
 
     	switch(wssResponse.event) {
 			  case 'pic':
-			  	console.log(wssResponse.pic);
+			  	//console.log(wssResponse.pic);
 			  break;
 
 			  case 'comment': 
@@ -776,7 +799,7 @@ function initApp() {
 			  break;
 
 			  case 'mask':
-			  	console.log(wssResponse.url);
+			  	console.log(wssResponse.url);                   
 			  break;
 			}
     };
