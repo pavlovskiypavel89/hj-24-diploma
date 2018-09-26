@@ -45,24 +45,23 @@ function initApp() {
 
   const apiURL = '//neto-api.herokuapp.com/pic';
   const penWidth = 4;
-  let arr = [];
   let socket,
       [canvas] = picture.getElementsByClassName('drawing-canvas'),
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
       isLinkedFromShare = false;
-
+     
   ////////////////////////////////////////////////////////////////////////
 
   const throttle = ( cb, isAnimation, delay ) => {
-    let isWaiting = false;
+    let isWaiting = false; 
     return function (...args) {
       if (!isWaiting) {
-        cb.apply(this, args);
+        if (isAnimation) { cb.apply(this, args); }
         isWaiting = true;
         if (isAnimation) {
         	requestAnimationFrame(() => isWaiting = false);
         } else {
-        	setTimeout(() => isWaiting = false, delay);
+        	setTimeout(() => { cb.apply(this, args); isWaiting = false; }, delay);
         }
       }
     }
@@ -604,10 +603,6 @@ function initApp() {
 
   ////////////////////////////////////////////////////////////////////////
 
-  function sendCanvas() {
-    canvas.toBlob(blob => socket.send(blob));
-  }
-
   function initDraw( event ) {
     drawBtn.removeEventListener('click', initDraw);
 
@@ -621,7 +616,6 @@ function initApp() {
     let strokes = [],
         penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
         drawing = false,
-        needsSendMask = null,
         needsRendering = false;
 
     function drawPoint( point ) {
@@ -654,38 +648,17 @@ function initApp() {
       });
     }
 
-	  const sendMask = () => {
-	  	needsSendMask = needsSendMask !== null ? true : false; 
-	  	if (needsSendMask) {
-	  		console.log('2'); 
-	  		console.log(needsSendMask);
-	  		/*
-	  		canvasCtx.clearRect(0, 0, canvas.width, canvas.height); 
-	  		strokes = [[]];
-	  		*/
-	  	}
-	  };
-
-  	const throttleSendMask = throttle(sendMask, false, 2000);
-
     (function tick() {
       if (needsRendering) {
       	draw();
         needsRendering = false;
-
-      	if (!needsSendMask) {
-          throttleSendMask();
-        } else {
-          needsSendMask = false; 
-        }
       }
-
       window.requestAnimationFrame(tick);
     })();
 
     canvas.addEventListener('mousedown', ( event ) => {
       drawing = true;
-
+      console.log(strokes)
       const stroke = [];
       stroke.push(makePoint(event.offsetX, event.offsetY));
       strokes.push(stroke);
@@ -694,21 +667,30 @@ function initApp() {
 
     canvas.addEventListener('mouseup', () => {
       drawing = false;
-      needsSendMask = null;
       strokes = [];
     });
-    
+
+    const throttleSendMask = throttle(sendMask, false, 1000);
     canvas.addEventListener('mousemove', ( event ) => {
       if (drawing) {  
         const stroke = strokes[0]; 
         stroke.push(makePoint(event.offsetX, event.offsetY));
         needsRendering = true;
+        throttleSendMask();
 			}
     });
 
     canvas.addEventListener('mouseleave', () => drawing = false);
 
     ///////////////////////////////////////////////////////////////////////////////
+
+    function sendMask() {
+	    canvas.toBlob(blob => {
+	    	socket.send(blob);
+	    	canvasCtx.clearRect(0, 0, canvas.width, canvas.height); 
+	    	strokes = [];
+	    });
+	  }
 
     const changeColor = ( event ) => {
       if (event.target.checked) { 
@@ -732,7 +714,7 @@ function initApp() {
   app.addEventListener('drop', uploadNewByDrop);
 
 	//Перемещение меню:
-	const moveMenu = throttle((...coords ) => dragMenu(...coords), false);
+	const moveMenu = throttle((...coords ) => dragMenu(...coords), true);
         menu.addEventListener('mousedown', putMenu);
 	app.addEventListener('mousemove', ( event ) => moveMenu(event.pageX, event.pageY));
 	app.addEventListener('mouseup', dropMenu);
@@ -799,7 +781,17 @@ function initApp() {
 			  break;
 
 			  case 'mask':
-			  	console.log(wssResponse.url);                   
+			  	console.log(wssResponse.url);
+			  	const canvasCtx = canvas.getContext('2d');
+			  	const mask = document.createElement('img');
+			  	mask.src = wssResponse.url;
+			  	canvasCtx.save();
+			  	mask.addEventListener('load', ( event ) => {
+			  		const pattern = canvasCtx.createPattern(mask, 'no-repeat');
+			  		canvasCtx.beginPath();
+			  		canvasCtx.fillStyle = pattern;
+			  		canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+			  	});
 			  break;
 			}
     };
