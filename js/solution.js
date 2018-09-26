@@ -56,12 +56,12 @@ function initApp() {
     let isWaiting = false; 
     return function (...args) {
       if (!isWaiting) {
-        if (isAnimation) { cb.apply(this, args); }
+        cb.apply(this, args);
         isWaiting = true;
         if (isAnimation) {
         	requestAnimationFrame(() => isWaiting = false);
         } else {
-        	setTimeout(() => { cb.apply(this, args); isWaiting = false; }, delay);
+        	setTimeout(() => { isWaiting = false; }, delay);
         }
       }
     }
