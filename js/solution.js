@@ -49,19 +49,6 @@ function initApp() {
       [canvas] = picture.getElementsByClassName('drawing-canvas'),
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
       isLinkedFromShare = false;
-
-  const defaultPattern = () => {
-  	const canvasCtx = canvas.getContext('2d');
-			  	const defaultMask = document.createElement('img');
-			  	mask.src = wssResponse.url;
-			  	
-			  	mask.addEventListener('load', ( event ) => {
-			  		const pattern = canvasCtx.createPattern(mask, 'no-repeat');
-			  		canvasCtx.beginPath();
-			  		canvasCtx.fillStyle = pattern;
-			  		canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-			  	});
-  }
      
   ////////////////////////////////////////////////////////////////////////
 
@@ -795,7 +782,7 @@ function initApp() {
 
 			  case 'mask':
 			  	console.log(wssResponse.url);
-			  	canvas.style.background = 'url('+ wssResponse.url + ');';
+			  	canvas.style.background = `url(${wssResponse.url})`;
 			  break;
 			}
     };
