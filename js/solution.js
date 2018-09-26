@@ -613,8 +613,8 @@ function initApp() {
     canvasCtx.lineWidth = penWidth;
     showElement(canvas);
 
-    let strokes = [],
-        penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
+    let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
+        strokes = [],
         drawing = false,
         needsRendering = false;
 
@@ -663,6 +663,7 @@ function initApp() {
       stroke.push(makePoint(event.offsetX, event.offsetY));
       strokes.push(stroke);
       needsRendering = true;
+      throttleSendMask();
     });
 
     canvas.addEventListener('mouseup', () => {
@@ -686,9 +687,11 @@ function initApp() {
 
     function sendMask() {
 	    canvas.toBlob(blob => {
-	    	socket.send(blob);
-	    	canvasCtx.clearRect(0, 0, canvas.width, canvas.height); 
-	    	strokes = [];
+	    	new Promise((done, fail) => {
+	    		socket.send(blob);
+	    		canvasCtx.clearRect(0, 0, canvas.width, canvas.height); 
+	    	})
+	    	.then(() => strokes = []);
 	    });
 	  }
 
@@ -782,6 +785,7 @@ function initApp() {
 
 			  case 'mask':
 			  	console.log(wssResponse.url);
+			  	console.log(canvas)
 			  	canvas.style.background = `url(${wssResponse.url})`;
 			  break;
 			}
