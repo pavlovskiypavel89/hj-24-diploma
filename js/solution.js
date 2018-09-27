@@ -20,6 +20,8 @@ function initApp() {
         [errorHeader] = errorMsg.getElementsByClassName('error__header'),
       	[errorText] = errorMsg.getElementsByClassName('error__message');
 
+  const apiURL = '//neto-api.herokuapp.com/pic'; 
+
   const picture = (() => {
     const picture = document.createElement('div'),
           canvas = document.createElement('canvas'); 
@@ -29,6 +31,7 @@ function initApp() {
 
     canvas.classList.add('current-image');
     picture.insertBefore(canvas, image.nextElementSibling);
+    hideElement(canvas);
 
     app.insertBefore(picture, menu.nextElementSibling);
     return picture;
@@ -43,10 +46,10 @@ function initApp() {
   	return pointShifts;      
   })();
 
-  const apiURL = '//neto-api.herokuapp.com/pic';
-  const penWidth = 4;
+  const canvas = picture.querySelector('canvas.current-image'),
+        penWidth = 4;
+  
   let socket,
-      canvas = picture.querySelector('canvas.current-image'),
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
       isLinkedFromShare = false;
      
@@ -99,6 +102,12 @@ function initApp() {
     el.style.display = 'none';
   };
 
+  const refreshCanvas = ( img ) => {
+  	canvas.width = img.clientWidth;
+    canvas.height = img.clientHeight;
+    showElement(canvas);
+  };
+
   const hideComments = ( radioBtn ) => {
   	Array.from(app.getElementsByClassName('comments__form')).forEach(comments => {
 		  if (radioBtn.value === 'on') {
@@ -106,13 +115,12 @@ function initApp() {
 		  } else {
 		  	hideElement(comments);
 		  }
-		}
-		);
+		});
   };
 
   const getDate = ( timestamp ) => {
 	  const date = new Date(timestamp),
-	   			options = { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+	   			options = { day: '2-digit', month: '2-digit', year: '2-digit', hour: 'numeric', minute: '2-digit', second: '2-digit' };
 	  return date.toLocaleString('ru-RU', options);
 	};
 
@@ -150,12 +158,13 @@ function initApp() {
 		saveImageSettings(imgData);
     window.history.pushState({path: urlTextarea.value}, '', urlTextarea.value);
 		image.addEventListener('load', () => {
+      initWSSConnection(imgData.id);
       hideElement(preloader);
       selectMenuModeTo('selected', isLinkedFromShare ? 'comments' : 'share');
 			renderComments(imgData);
-      initWSSConnection(imgData.id);
-      isLinkedFromShare = false;
+      refreshCanvas(image);
 		}); 
+		isLinkedFromShare = false;
  	};
 
   const loadImage = ( { id } ) => {
@@ -172,14 +181,12 @@ function initApp() {
 		  case 'initial':
 		    menu.dataset.state = 'initial';
 		    hideElement(burgerBtn);
-		    hideElement(canvas);
 		  break;
 
 		  case 'default':
 		    menu.dataset.state = 'default';
 		    Array.from(menu.querySelectorAll(`[data-state='selected']`)).forEach(el => el.dataset.state = '');
 		    drawBtn.addEventListener('click', initDraw);
-		    hideElement(canvas);
 		  break;
 
 		  case 'selected':
@@ -226,8 +233,11 @@ function initApp() {
       image.src = imageSettings.url;
       urlTextarea.removeAttribute('value');
       urlTextarea.value = imageSettings.path;
-      renderComments(imageSettings);
-      initWSSConnection(imageSettings.id);
+      image.addEventListener('load', () => {
+      	initWSSConnection(imageSettings.id);
+      	renderComments(imageSettings);
+      	refreshCanvas(image);
+      }); 
 	  } else {
 	  	const urlParamID = new URL(`${window.location.href}`).searchParams.get('id');
       if (urlParamID) { 
@@ -240,7 +250,6 @@ function initApp() {
 	  	menu.style.left = menuSettings.left + 'px';
 			menu.style.top = menuSettings.top + 'px';
 			selectMenuModeTo(menuSettings.mode, menuSettings.selectItemType);
-			hideElement(canvas);
 
 			if (menuSettings.selectItemType === 'draw') {
 				image.addEventListener('load', initDraw);
@@ -527,9 +536,9 @@ function initApp() {
     } 
   };
 
-  const sendCommentByEnter = ( event ) => {
-    if (!event.repeat && event.code === 'Enter' && event.target.classList.contains('comments__input')) {
-      const submit = event.target.nextElementSibling.nextElementSibling; 
+  const pressEnter = ( event ) => {
+    if (!event.repeat && !event.shiftKey && event.code === 'Enter' && event.target.classList.contains('comments__input')) {
+      const submit = event.target.nextElementSibling.nextElementSibling;
       submit.dispatchEvent( new MouseEvent('click', event) );
       event.target.blur();
     }
@@ -603,29 +612,36 @@ function initApp() {
     drawBtn.removeEventListener('click', initDraw);
 
     const canvasCtx = canvas.getContext('2d');
-    canvas.width = image.clientWidth;
-    canvas.height = image.clientHeight;
-    canvasCtx.strokeStyle = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor;
+    canvasCtx.strokeStyle = canvasCtx.fillStyle = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor;
     canvasCtx.lineWidth = penWidth;
-    showElement(canvas);
 
     let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
         strokes = [],
         isDrawing = false,
         needsRendering = false;
 
+    const changeColor = ( event ) => {
+      if (event.target.checked) { 
+      	checkedColorBtn.removeAttribute('checked');
+      	checkedColorBtn = event.target;
+      	event.target.setAttribute('checked', '');
+
+        canvasCtx.strokeStyle = canvasCtx.fillStyle = penColor = getComputedStyle(event.target.nextElementSibling).backgroundColor;
+        canvasCtx.globalCompositeOperation = 'source-over';
+      }
+    };
+
+    drawTools.addEventListener('change', changeColor);
+
     function drawPoint( point ) {
       canvasCtx.beginPath();
-      canvasCtx.fillStyle = penColor;
       canvasCtx.arc(...point, penWidth / 2, 0, 2 * Math.PI);
       canvasCtx.fill();
     }
 
     function drawStroke( points ) {
       canvasCtx.beginPath();
-      canvasCtx.lineWidth = penWidth;
       canvasCtx.lineCap = canvasCtx.lineJoin = 'round';
-      canvasCtx.strokeStyle = penColor;
       canvasCtx.moveTo(...points[0]);
       for (let i = 1; i < points.length - 1; i++) {
         canvasCtx.lineTo(...points[i], ...points[i + 1]);
@@ -644,22 +660,27 @@ function initApp() {
       });
     }
 
-    (function tick() {
-      if (needsRendering) {
-      	draw();
-        needsRendering = false;
-      }
-      window.requestAnimationFrame(tick);
-    })();
+    function sendMask() {
+	    canvas.toBlob(blob => {
+	    	new Promise((done, fail) => {
+	    		socket.send(blob);
+	    		canvasCtx.clearRect(0, 0, canvas.width, canvas.height); 
+	    	})
+	    	.then(() => strokes = []);
+	    });
+	  };
 
-    const throttleSendMask = throttle(sendMask, false, 1000);
+	  const throttleSendMask = throttle(sendMask, false, 1000);
+
     canvas.addEventListener('mousedown', ( event ) => {
-      isDrawing = true;
-      const stroke = [];
-      stroke.push(makePoint(event.offsetX, event.offsetY));
-      strokes.push(stroke);
-      needsRendering = true; 
-      //throttleSendMask();
+    	if (drawBtn.dataset.state === 'selected') {
+    		isDrawing = true;
+	      const stroke = [];
+	      stroke.push(makePoint(event.offsetX, event.offsetY));
+	      strokes.push(stroke);
+	      needsRendering = true; 
+	      //throttleSendMask();
+    	}
     });
 
     canvas.addEventListener('mousemove', ( event ) => {
@@ -678,30 +699,13 @@ function initApp() {
 
     canvas.addEventListener('mouseleave', () => isDrawing = false);
 
-    ///////////////////////////////////////////////////////////////////////////////
-
-    function sendMask() {
-	    canvas.toBlob(blob => {
-	    	new Promise((done, fail) => {
-	    		socket.send(blob);
-	    		canvasCtx.clearRect(0, 0, canvas.width, canvas.height); 
-	    	})
-	    	.then(() => strokes = []);
-	    });
-	  }
-
-    const changeColor = ( event ) => {
-      if (event.target.checked) { 
-      	checkedColorBtn.removeAttribute('checked');
-      	checkedColorBtn = event.target;
-      	event.target.setAttribute('checked', '');
-
-        canvasCtx.strokeStyle = canvasCtx.fillStyle = penColor = getComputedStyle(event.target.nextElementSibling).backgroundColor;
-        canvasCtx.globalCompositeOperation = 'source-over';
+    (function tick() {
+      if (needsRendering) {
+      	draw();
+        needsRendering = false;
       }
-    };
-
-    drawTools.addEventListener('change', changeColor);
+      window.requestAnimationFrame(tick);
+    })();
   };
 
   ///////////////////////////////////////////////////////////////////////
@@ -722,7 +726,7 @@ function initApp() {
 
 	//Копирование ссылки в режиме "Поделиться":
 	shareTools.addEventListener('click', copyURL);
-  app.addEventListener('click', ( event ) => {if (event.target !== urlTextarea) { urlTextarea.blur(); } });
+  app.addEventListener('click', ( event ) => { if (event.target !== urlTextarea) {urlTextarea.blur();} });
 
 	//Переключатели отображаения комментариев на странице:
 	commentsTools.addEventListener('change', toggleCommentsShow);
@@ -732,7 +736,7 @@ function initApp() {
   picture.addEventListener('change', openCommentsForm);
   picture.addEventListener('click', typeComment);
 	picture.addEventListener('click', sendComment);
-  picture.addEventListener('keydown', sendCommentByEnter);
+  picture.addEventListener('keydown', pressEnter);
 	picture.addEventListener('click', closeCommentsForm);
 
   //Инициализация режима рисования:
