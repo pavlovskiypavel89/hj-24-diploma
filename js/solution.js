@@ -20,18 +20,18 @@ function initApp() {
         [errorHeader] = errorMsg.getElementsByClassName('error__header'),
       	[errorText] = errorMsg.getElementsByClassName('error__message');
 
-  const figure = (() => {
-    const figure = document.createElement('div'),
+  const picture = (() => {
+    const picture = document.createElement('div'),
           canvas = document.createElement('canvas'); 
     
-    figure.id = 'figure';
-    figure.appendChild(image);
+    picture.id = 'picture';
+    picture.appendChild(image);
 
     canvas.classList.add('current-image');
-    figure.insertBefore(canvas, image.nextElementSibling);
+    picture.insertBefore(canvas, image.nextElementSibling);
 
-    app.insertBefore(figure, menu.nextElementSibling);
-    return figure;
+    app.insertBefore(picture, menu.nextElementSibling);
+    return picture;
   })();
 
   const clickPointShifts = (() => {
@@ -46,7 +46,7 @@ function initApp() {
   const apiURL = '//neto-api.herokuapp.com/pic';
   const penWidth = 4;
   let socket,
-      canvas = figure.querySelector('canvas.current-image'),
+      canvas = picture.querySelector('canvas.current-image'),
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
       isLinkedFromShare = false;
      
@@ -402,7 +402,7 @@ function initApp() {
           newComment = crtNewCommentNode(commentDate, comment.message);
 
     newComment.dataset.timestamp = comment.timestamp; 
-    figure.appendChild(newCommentsForm);
+    picture.appendChild(newCommentsForm);
     commentsBody.insertBefore(newComment, loader.parentElement);
     return newCommentsForm;
   };
@@ -422,10 +422,10 @@ function initApp() {
         }
       }, document.createDocumentFragment());
 
-      figure.appendChild(Forms);
+      picture.appendChild(Forms);
     } else {
-    	while (figure.hasChildNodes() && figure.lastElementChild.classList.contains('comments__form')) {
-        figure.removeChild(figure.lastElementChild);
+    	while (picture.hasChildNodes() && picture.lastElementChild.classList.contains('comments__form')) {
+        picture.removeChild(picture.lastElementChild);
       }
     }
     return imgData;
@@ -552,7 +552,7 @@ function initApp() {
   		const [comment] = commentsFormCheckbox.parentElement.getElementsByClassName('comment');	
 
   		if (comment.firstElementChild.classList.contains('loader')) {
-	      figure.removeChild(commentsFormCheckbox.parentElement);
+	      picture.removeChild(commentsFormCheckbox.parentElement);
 	  	}
   		if (!isClosedByBtn || !comment.firstElementChild.classList.contains('loader')) {
   			commentsFormCheckbox.parentElement.style.zIndex = '';
@@ -563,11 +563,11 @@ function initApp() {
 
   const addNewCommentsForm = ( event ) => {
 	  if (event.target.classList.contains('current-image') && commentsBtn.dataset.state === 'selected') {
-	  	const prevCommentsFormCheckbox = figure.querySelector('.comments__marker-checkbox[disabled=""]');
+	  	const prevCommentsFormCheckbox = picture.querySelector('.comments__marker-checkbox[disabled=""]');
 	  	toggleDisplayCommentsForm(prevCommentsFormCheckbox, false);
 
 	  	const newCommentsForm = crtNewCommentsForm(event.pageX - clickPointShifts.left, event.pageY - clickPointShifts.top);
-	  	figure.appendChild(newCommentsForm);
+	  	picture.appendChild(newCommentsForm);
       newCommentsForm.getElementsByClassName('comments__marker-checkbox')[0].checked = true;
       newCommentsForm.getElementsByClassName('comments__marker-checkbox')[0].disabled = true;
       newCommentsForm.style.zIndex = '5';
@@ -576,7 +576,7 @@ function initApp() {
 
   const openCommentsForm = ( event ) => {
   	if (event.target.classList.contains('comments__marker-checkbox') && event.target.checked) {
-  		const prevCommentsFormCheckbox = figure.querySelector('.comments__marker-checkbox[disabled=""]');
+  		const prevCommentsFormCheckbox = picture.querySelector('.comments__marker-checkbox[disabled=""]');
 
   		toggleDisplayCommentsForm(prevCommentsFormCheckbox, false);
   		event.target.disabled = true;
@@ -728,12 +728,12 @@ function initApp() {
 	commentsTools.addEventListener('change', toggleCommentsShow);
 
 	//Работа с формой комментариев:
-	figure.addEventListener('click', addNewCommentsForm);
-  figure.addEventListener('change', openCommentsForm);
-  figure.addEventListener('click', typeComment);
-	figure.addEventListener('click', sendComment);
-  figure.addEventListener('keydown', sendCommentByEnter);
-	figure.addEventListener('click', closeCommentsForm);
+	picture.addEventListener('click', addNewCommentsForm);
+  picture.addEventListener('change', openCommentsForm);
+  picture.addEventListener('click', typeComment);
+	picture.addEventListener('click', sendComment);
+  picture.addEventListener('keydown', sendCommentByEnter);
+	picture.addEventListener('click', closeCommentsForm);
 
   //Инициализация режима рисования:
   drawBtn.addEventListener('click', initDraw);
@@ -756,7 +756,12 @@ function initApp() {
 
     	switch(wssResponse.event) {
 			  case 'pic':
-			  	//console.log(wssResponse.pic);
+			  	console.log(wssResponse.pic);
+          if (wssResponse.pic) {
+            canvas.style.background = `url(${wssResponse.pic.mask})`;
+          } else { 
+            canvas.style.background = '';
+          }
 			  break;
 
 			  case 'comment': 
@@ -773,7 +778,7 @@ function initApp() {
 			  	if (commentsMarker) {
 			  		loadComment(imageSettings, wssResponse.comment.left, wssResponse.comment.top);
 			    } else {
-					  figure.appendChild(crtNewCommentsForm(wssResponse.comment.left, wssResponse.comment.top));	
+					  picture.appendChild(crtNewCommentsForm(wssResponse.comment.left, wssResponse.comment.top));	
 			      loadComment(imageSettings, wssResponse.comment.left, wssResponse.comment.top);
 			    }
 			  break;
