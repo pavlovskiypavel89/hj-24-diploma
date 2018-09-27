@@ -158,9 +158,9 @@ function initApp() {
 		saveImageSettings(imgData);
     window.history.pushState({path: urlTextarea.value}, '', urlTextarea.value);
 		image.addEventListener('load', () => {
-      initWSSConnection(imgData.id);
       hideElement(preloader);
       selectMenuModeTo('selected', isLinkedFromShare ? 'comments' : 'share');
+      initWSSConnection(imgData.id);
 			renderComments(imgData);
       refreshCanvas(image);
 		}); 
@@ -233,11 +233,9 @@ function initApp() {
       image.src = imageSettings.url;
       urlTextarea.removeAttribute('value');
       urlTextarea.value = imageSettings.path;
-      image.addEventListener('load', () => {
-      	initWSSConnection(imageSettings.id);
-      	renderComments(imageSettings);
-      	refreshCanvas(image);
-      }); 
+      initWSSConnection(imageSettings.id);
+      renderComments(imageSettings);
+      image.addEventListener('load', () => refreshCanvas(image));
 	  } else {
 	  	const urlParamID = new URL(`${window.location.href}`).searchParams.get('id');
       if (urlParamID) { 
@@ -679,7 +677,6 @@ function initApp() {
 	      stroke.push(makePoint(event.offsetX, event.offsetY));
 	      strokes.push(stroke);
 	      needsRendering = true; 
-	      //throttleSendMask();
     	}
     });
 
@@ -760,7 +757,6 @@ function initApp() {
 
     	switch(wssResponse.event) {
 			  case 'pic':
-			  	console.log(wssResponse.pic);
           if (wssResponse.pic) {
             canvas.style.background = `url(${wssResponse.pic.mask})`;
           } else { 
