@@ -61,7 +61,7 @@ function initApp() {
         if (isAnimation) {
         	requestAnimationFrame(() => isWaiting = false);
         } else {
-        	setTimeout(() => { isWaiting = false; }, delay);
+        	setTimeout(() => isWaiting = false, delay);
         }
       }
     }
@@ -87,7 +87,7 @@ function initApp() {
   };
 
   const saveImageSettings = ( imgData ) => {
-		urlTextarea.value = imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
+		urlTextarea.value = imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;
     sessionStorage.imageSettings = JSON.stringify(imgData);
   };
 
@@ -611,7 +611,7 @@ function initApp() {
 
     let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
         strokes = [],
-        drawing = false,
+        isDrawing = false,
         needsRendering = false;
 
     function drawPoint( point ) {
@@ -654,16 +654,16 @@ function initApp() {
 
     const throttleSendMask = throttle(sendMask, false, 1000);
     canvas.addEventListener('mousedown', ( event ) => {
-      drawing = true;
+      isDrawing = true;
       const stroke = [];
       stroke.push(makePoint(event.offsetX, event.offsetY));
       strokes.push(stroke);
       needsRendering = true; 
-      throttleSendMask();
+      //throttleSendMask();
     });
 
     canvas.addEventListener('mousemove', ( event ) => {
-      if (drawing) {  
+      if (isDrawing) {  
         const stroke = strokes[0]; 
         stroke.push(makePoint(event.offsetX, event.offsetY));
         needsRendering = true;
@@ -672,11 +672,11 @@ function initApp() {
     });
 
     canvas.addEventListener('mouseup', () => {
-      drawing = false;
+      isDrawing = false;
       strokes = [];
     });
 
-    canvas.addEventListener('mouseleave', () => drawing = false);
+    canvas.addEventListener('mouseleave', () => isDrawing = false);
 
     ///////////////////////////////////////////////////////////////////////////////
 
