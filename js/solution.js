@@ -20,18 +20,18 @@ function initApp() {
         [errorHeader] = errorMsg.getElementsByClassName('error__header'),
       	[errorText] = errorMsg.getElementsByClassName('error__message');
 
-  const picture = (() => {
-    const picture = document.createElement('div'),
+  const figure = (() => {
+    const figure = document.createElement('div'),
           canvas = document.createElement('canvas'); 
     
-    picture.id = 'pictureWrap';
-    picture.appendChild(image);
+    figure.id = 'figure';
+    figure.appendChild(image);
 
-    canvas.classList.add('current-image', 'drawing-canvas');
-    picture.insertBefore(canvas, image.nextElementSibling);
+    canvas.classList.add('current-image');
+    figure.insertBefore(canvas, image.nextElementSibling);
 
-    app.insertBefore(picture, menu.nextElementSibling);
-    return picture;
+    app.insertBefore(figure, menu.nextElementSibling);
+    return figure;
   })();
 
   const clickPointShifts = (() => {
@@ -46,7 +46,7 @@ function initApp() {
   const apiURL = '//neto-api.herokuapp.com/pic';
   const penWidth = 4;
   let socket,
-      [canvas] = picture.getElementsByClassName('drawing-canvas'),
+      canvas = figure.querySelector('canvas.current-image'),
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
       isLinkedFromShare = false;
      
@@ -89,7 +89,6 @@ function initApp() {
   const saveImageSettings = ( imgData ) => {
 		urlTextarea.value = imgData.path = window.location.href.replace(/\?id=.*$/, '') + '?id=' + imgData.id;   
     sessionStorage.imageSettings = JSON.stringify(imgData);
-		//urlTextarea.value = getSessionSettings('imageSettings').path;
   };
 
   function showElement( el ) {
@@ -107,7 +106,6 @@ function initApp() {
 		  } else {
 		  	hideElement(comments);
 		  }
-		  //comments.style.display = (radioBtn.value === 'on') ? '' : 'none'
 		}
 		);
   };
@@ -404,13 +402,12 @@ function initApp() {
           newComment = crtNewCommentNode(commentDate, comment.message);
 
     newComment.dataset.timestamp = comment.timestamp; 
-    picture.appendChild(newCommentsForm);
+    figure.appendChild(newCommentsForm);
     commentsBody.insertBefore(newComment, loader.parentElement);
     return newCommentsForm;
   };
 
   function renderComments( imgData ) {
-    //if (defaultCommentsForm) { app.removeChild(defaultCommentsForm); }
     if (imgData.comments) {
       const Forms = Object.keys(imgData.comments).reduce(( forms, id ) => {
         const commentsMarker = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
@@ -425,10 +422,10 @@ function initApp() {
         }
       }, document.createDocumentFragment());
 
-      picture.appendChild(Forms);
+      figure.appendChild(Forms);
     } else {
-    	while (picture.hasChildNodes() && picture.lastElementChild.classList.contains('comments__form')) {
-        picture.removeChild(picture.lastElementChild);
+    	while (figure.hasChildNodes() && figure.lastElementChild.classList.contains('comments__form')) {
+        figure.removeChild(figure.lastElementChild);
       }
     }
     return imgData;
@@ -478,7 +475,6 @@ function initApp() {
   };
   
   function loadComment( imgData, left, top ) {
-  	//if (!imgData) { return ; }
   	const commentForm = app.querySelector(`.comments__marker[data-left="${left}"][data-top="${top}"]`).parentElement,
   				[loader] = commentForm.getElementsByClassName('loader');
 
@@ -556,7 +552,7 @@ function initApp() {
   		const [comment] = commentsFormCheckbox.parentElement.getElementsByClassName('comment');	
 
   		if (comment.firstElementChild.classList.contains('loader')) {
-	      picture.removeChild(commentsFormCheckbox.parentElement);
+	      figure.removeChild(commentsFormCheckbox.parentElement);
 	  	}
   		if (!isClosedByBtn || !comment.firstElementChild.classList.contains('loader')) {
   			commentsFormCheckbox.parentElement.style.zIndex = '';
@@ -567,11 +563,11 @@ function initApp() {
 
   const addNewCommentsForm = ( event ) => {
 	  if (event.target.classList.contains('current-image') && commentsBtn.dataset.state === 'selected') {
-	  	const prevCommentsFormCheckbox = picture.querySelector('.comments__marker-checkbox[disabled=""]');
+	  	const prevCommentsFormCheckbox = figure.querySelector('.comments__marker-checkbox[disabled=""]');
 	  	toggleDisplayCommentsForm(prevCommentsFormCheckbox, false);
 
 	  	const newCommentsForm = crtNewCommentsForm(event.pageX - clickPointShifts.left, event.pageY - clickPointShifts.top);
-	  	picture.appendChild(newCommentsForm);
+	  	figure.appendChild(newCommentsForm);
       newCommentsForm.getElementsByClassName('comments__marker-checkbox')[0].checked = true;
       newCommentsForm.getElementsByClassName('comments__marker-checkbox')[0].disabled = true;
       newCommentsForm.style.zIndex = '5';
@@ -580,7 +576,7 @@ function initApp() {
 
   const openCommentsForm = ( event ) => {
   	if (event.target.classList.contains('comments__marker-checkbox') && event.target.checked) {
-  		const prevCommentsFormCheckbox = picture.querySelector('.comments__marker-checkbox[disabled=""]');
+  		const prevCommentsFormCheckbox = figure.querySelector('.comments__marker-checkbox[disabled=""]');
 
   		toggleDisplayCommentsForm(prevCommentsFormCheckbox, false);
   		event.target.disabled = true;
@@ -656,29 +652,28 @@ function initApp() {
       window.requestAnimationFrame(tick);
     })();
 
+    const throttleSendMask = throttle(sendMask, false, 1000);
     canvas.addEventListener('mousedown', ( event ) => {
       drawing = true;
-      console.log(strokes)
       const stroke = [];
       stroke.push(makePoint(event.offsetX, event.offsetY));
       strokes.push(stroke);
-      needsRendering = true;
+      needsRendering = true; 
       throttleSendMask();
     });
 
-    canvas.addEventListener('mouseup', () => {
-      drawing = false;
-      strokes = [];
-    });
-
-    const throttleSendMask = throttle(sendMask, false, 1000);
     canvas.addEventListener('mousemove', ( event ) => {
       if (drawing) {  
         const stroke = strokes[0]; 
         stroke.push(makePoint(event.offsetX, event.offsetY));
         needsRendering = true;
         throttleSendMask();
-			}
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      drawing = false;
+      strokes = [];
     });
 
     canvas.addEventListener('mouseleave', () => drawing = false);
@@ -733,12 +728,12 @@ function initApp() {
 	commentsTools.addEventListener('change', toggleCommentsShow);
 
 	//Работа с формой комментариев:
-	picture.addEventListener('click', addNewCommentsForm);
-  picture.addEventListener('change', openCommentsForm);
-  picture.addEventListener('click', typeComment);
-	picture.addEventListener('click', sendComment);
-  picture.addEventListener('keydown', sendCommentByEnter);
-	picture.addEventListener('click', closeCommentsForm);
+	figure.addEventListener('click', addNewCommentsForm);
+  figure.addEventListener('change', openCommentsForm);
+  figure.addEventListener('click', typeComment);
+	figure.addEventListener('click', sendComment);
+  figure.addEventListener('keydown', sendCommentByEnter);
+	figure.addEventListener('click', closeCommentsForm);
 
   //Инициализация режима рисования:
   drawBtn.addEventListener('click', initDraw);
@@ -778,14 +773,12 @@ function initApp() {
 			  	if (commentsMarker) {
 			  		loadComment(imageSettings, wssResponse.comment.left, wssResponse.comment.top);
 			    } else {
-					  picture.appendChild(crtNewCommentsForm(wssResponse.comment.left, wssResponse.comment.top));	
+					  figure.appendChild(crtNewCommentsForm(wssResponse.comment.left, wssResponse.comment.top));	
 			      loadComment(imageSettings, wssResponse.comment.left, wssResponse.comment.top);
 			    }
 			  break;
 
 			  case 'mask':
-			  	console.log(wssResponse.url);
-			  	console.log(canvas)
 			  	canvas.style.background = `url(${wssResponse.url})`;
 			  break;
 			}
