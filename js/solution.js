@@ -340,7 +340,7 @@ function initApp() {
       dragged = event.currentTarget;
 
       const draggedBounds = event.target.getBoundingClientRect(),
-        	draggedCSS = getComputedStyle(dragged);
+	    draggedCSS = getComputedStyle(dragged);
 
       draggedSettings = {
         shiftX: draggedBounds.width / 2,
@@ -473,7 +473,7 @@ function initApp() {
         el("div", {class: "comments__body"}, [
           el("div", {class: "comment"}, [
             el("div", {class: "loader", style: "display: none;"}, [
-	      el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null)
+	        el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null)
             ])
           ]),
           el("textarea", {class: "comments__input", type: "text", placeholder: "Напишите ответ..."}, null),
