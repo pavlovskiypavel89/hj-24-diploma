@@ -24,7 +24,7 @@ function initApp() {
 
   const picture = (() => {
     const picture = document.createElement("div"),
-    mask = document.createElement("img"),
+    	  mask = document.createElement("img"),
 	  canvas = document.createElement("canvas");
 
     picture.id = "picture";
@@ -52,9 +52,9 @@ function initApp() {
   })();
 
   const canvas = picture.querySelector("canvas.current-image"),
-  			mask = picture.querySelector(".mask.current-image"),
+  	mask = picture.querySelector(".mask.current-image"),
 	penWidth = 4;
-	console.log(mask)
+
   let socket,
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
       isLinkedFromShare = false;
@@ -687,12 +687,8 @@ function initApp() {
     }
 
     const sendMask = () => {
-      canvas.toBlob(blob => {
-        socket.send(blob);
-      });
+      canvas.toBlob(blob => socket.send(blob));
     };
-
-    //const throttleSendMask = throttle(sendMask, false, 1000);
 
     canvas.addEventListener("mousedown", event => {
       if (drawBtn.dataset.state === "selected") {
@@ -786,11 +782,7 @@ function initApp() {
 
       switch (wssResponse.event) {
         case "pic":
-          if (wssResponse.pic) {
-          	mask.src = wssResponse.pic.mask;
-          } else {
-            mask.src = "";
-          }
+          if (wssResponse.pic) { mask.src = wssResponse.pic.mask; } 
         break;
 
         case "comment":
