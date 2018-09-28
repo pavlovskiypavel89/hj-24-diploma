@@ -24,7 +24,7 @@ function initApp() {
 
   const picture = (() => {
     const picture = document.createElement("div"),
-		  canvas = document.createElement("canvas");
+	  canvas = document.createElement("canvas");
 
     picture.id = "picture";
     picture.appendChild(image);
@@ -39,8 +39,8 @@ function initApp() {
 
   const clickPointShifts = (() => {
     const pointShifts = {},
-		  markerBounds = marker.getBoundingClientRect(),
-		  formBounds = marker.parentElement.getBoundingClientRect();
+	  markerBounds = marker.getBoundingClientRect(),
+	  formBounds = marker.parentElement.getBoundingClientRect();
 	  
     pointShifts.left = markerBounds.left - formBounds.left + markerBounds.width / 2;
     pointShifts.top = markerBounds.top - formBounds.top + markerBounds.height;
@@ -48,11 +48,11 @@ function initApp() {
   })();
 
   const canvas = picture.querySelector("canvas.current-image"),
-		penWidth = 4;
+	penWidth = 4;
 
   let socket,
-	  checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
-	  isLinkedFromShare = false;
+      checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
+      isLinkedFromShare = false;
 
   ////////////////////////////////////////////////////////////////////////
 
