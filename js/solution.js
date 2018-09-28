@@ -777,11 +777,15 @@ function initApp() {
 
       switch (wssResponse.event) {
         case "pic":
-          if (wssResponse.pic) {
+          if (wssResponse.pic.mask) {
             canvas.style.background = `url(${wssResponse.pic.mask})`;
           } else {
             canvas.style.background = "";
           }
+		      
+          if (wssResponse.pic.comments) {
+            renderComments(wssResponse.pic);
+          };
         break;
 
         case "comment":
