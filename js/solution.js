@@ -1,24 +1,24 @@
 "use strict";
 function initApp() {
   const [app] = document.getElementsByClassName("app"),
-		[menu] = app.getElementsByClassName("menu"),
-		[burgerBtn] = menu.getElementsByClassName("burger"),
-		[newImgBtn] = menu.getElementsByClassName("new"),
-		[commentsBtn] = menu.getElementsByClassName("comments"),
-		[commentsTools] = menu.getElementsByClassName("comments-tools"),
-		commentsOff = document.getElementById("comments-off"),
-		[marker] = app.getElementsByClassName("comments__marker"),
-		[drawBtn] = menu.getElementsByClassName("draw"),
-		[drawTools] = menu.getElementsByClassName("draw-tools"),
-		[shareBtn] = menu.getElementsByClassName("share"),
-		[shareTools] = menu.getElementsByClassName("share-tools"),
-		[urlTextarea] = shareTools.getElementsByClassName("menu__url"),
-		[defaultCommentsForm] = app.removeChild(app.getElementsByClassName("comments__form")[0]),
-		[image] = app.getElementsByClassName("current-image"),
-		[preloader] = app.getElementsByClassName("image-loader"),
-		[errorMsg] = app.getElementsByClassName("error"),
-		[errorHeader] = errorMsg.getElementsByClassName("error__header"),
-		[errorText] = errorMsg.getElementsByClassName("error__message");
+	[menu] = app.getElementsByClassName("menu"),
+	[burgerBtn] = menu.getElementsByClassName("burger"),
+	[newImgBtn] = menu.getElementsByClassName("new"),
+	[commentsBtn] = menu.getElementsByClassName("comments"),
+	[commentsTools] = menu.getElementsByClassName("comments-tools"),
+	commentsOff = document.getElementById("comments-off"),
+	[marker] = app.getElementsByClassName("comments__marker"),
+	[drawBtn] = menu.getElementsByClassName("draw"),
+	[drawTools] = menu.getElementsByClassName("draw-tools"),
+	[shareBtn] = menu.getElementsByClassName("share"),
+	[shareTools] = menu.getElementsByClassName("share-tools"),
+	[urlTextarea] = shareTools.getElementsByClassName("menu__url"),
+	[defaultCommentsForm] = app.removeChild(app.getElementsByClassName("comments__form")[0]),
+	[image] = app.getElementsByClassName("current-image"),
+	[preloader] = app.getElementsByClassName("image-loader"),
+	[errorMsg] = app.getElementsByClassName("error"),
+	[errorHeader] = errorMsg.getElementsByClassName("error__header"),
+	[errorText] = errorMsg.getElementsByClassName("error__message");
 
   const apiURL = "//neto-api.herokuapp.com/pic";
 
