@@ -24,17 +24,13 @@ function initApp() {
 
   const picture = (() => {
     const picture = document.createElement("div"),
-    	  mask = document.createElement("img"),
 	  canvas = document.createElement("canvas");
 
     picture.id = "picture";
     picture.appendChild(image);
 
-    mask.classList.add("current-image", 'mask');
-    picture.insertBefore(mask, image.nextElementSibling);
-
     canvas.classList.add("current-image");
-    picture.insertBefore(canvas, mask.nextElementSibling);
+    picture.insertBefore(canvas, image.nextElementSibling);
     hideElement(canvas);
 
     app.insertBefore(picture, menu.nextElementSibling);
@@ -52,7 +48,6 @@ function initApp() {
   })();
 
   const canvas = picture.querySelector("canvas.current-image"),
-  	mask = picture.querySelector(".mask.current-image"),
 	penWidth = 4;
 
   let socket,
@@ -243,12 +238,11 @@ function initApp() {
   };
 
   const renderApp = () => {
-    let imageSettings = getSessionSettings("imageSettings"),
-       menuSettings = getSessionSettings("menuSettings"),
-       urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
-    
+    const imageSettings = getSessionSettings("imageSettings"),
+      	  menuSettings = getSessionSettings("menuSettings");
+
     image.src = "";
-    if (imageSettings && urlParamID) {
+    if (imageSettings) {
       image.dataset.status = "load";
       image.src = imageSettings.url;
       urlTextarea.removeAttribute("value");
@@ -257,13 +251,10 @@ function initApp() {
       renderComments(imageSettings);
       image.addEventListener("load", () => refreshCanvas(image));
     } else {
+      const urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
       if (urlParamID) {
         isLinkedFromShare = true;
         loadImage({ id: urlParamID });
-      } else {
-        delete sessionStorage.imageSettings;
-        delete sessionStorage.menuSettings;
-        menuSettings = null;
       }
     }
 
@@ -471,7 +462,7 @@ function initApp() {
   function crtNewCommentNode(date, message) {
     return el("div", { class: "comment" }, [
       el("p", { class: "comment__time" }, date),
-      el("p", {class: "comment__message", style: "white-space: pre;" }, message)
+      el("p", { class: "comment__message" }, message)
     ]);
   }
 
@@ -686,9 +677,10 @@ function initApp() {
       });
     }
 
-    const sendMask = () => {
+    function sendMask() {
       canvas.toBlob(blob => socket.send(blob));
-    };
+      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 
     canvas.addEventListener("mousedown", event => {
       if (drawBtn.dataset.state === "selected") {
@@ -710,11 +702,11 @@ function initApp() {
     });
 
     canvas.addEventListener("mouseup", () => {
-      if (drawBtn.dataset.state === "selected") {
+      if (drawBtn.dataset.state === "selected") {	    
         isDrawing = false;
-        throttle(sendMask, false, 1000)();
+        throttle(sendMask, false, 1000)();    
         strokes = [];
-      }
+      }      
     });
 
     canvas.addEventListener("mouseleave", () => (isDrawing = false));
@@ -777,12 +769,16 @@ function initApp() {
       };
     };
 
-    const updateApp = event => {
+    const updatePic = event => {
       const wssResponse = JSON.parse(event.data);
 
       switch (wssResponse.event) {
         case "pic":
-          if (wssResponse.pic) { mask.src = wssResponse.pic.mask; } 
+          if (wssResponse.pic) {
+            canvas.style.background = `url(${wssResponse.pic.mask})`;
+          } else {
+            canvas.style.background = "";
+          }
         break;
 
         case "comment":
@@ -805,12 +801,12 @@ function initApp() {
         break;
 
         case "mask":
-           mask.src = wssResponse.url;
+          canvas.style.background = `url(${wssResponse.url})`;
         break;
       }
     };
 
-    socket.addEventListener("message", updateApp);
+    socket.addEventListener("message", updatePic);
     socket.addEventListener("open", event => console.log("Вебсокет соединение установлено"));
     socket.addEventListener("close", event => console.log(event.wasClean ? '"Чистое закрытие" соединения' : `Обрыв связи. Причина: ${event.reason}`));
     window.addEventListener("beforeunload", () => socket.close(1000, "Сессия успешно завершена"));
