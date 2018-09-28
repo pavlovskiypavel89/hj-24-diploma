@@ -161,10 +161,10 @@ function initApp() {
       hideElement(preloader);
       selectMenuModeTo('selected', isLinkedFromShare ? 'comments' : 'share');
       initWSSConnection(imgData.id);
-			renderComments(imgData);
+      renderComments(imgData);
       refreshCanvas(image);
+      isLinkedFromShare = false;  			
 		}); 
-		isLinkedFromShare = false;
  	};
 
   const loadImage = ( { id } ) => {
