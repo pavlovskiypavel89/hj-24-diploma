@@ -122,14 +122,14 @@ function initApp() {
 
   const getDate = timestamp => {
     const date = new Date(timestamp),
-		  options = {
-			day: "2-digit",
-			month: "2-digit",
-			year: "2-digit",
-			hour: "numeric",
-			minute: "2-digit",
-			second: "2-digit"
-		  };
+	  options = {
+		day: "2-digit",
+		month: "2-digit",
+		year: "2-digit",
+		hour: "numeric",
+		minute: "2-digit",
+		second: "2-digit"
+	  };
     return date.toLocaleString("ru-RU", options);
   };
 
@@ -422,10 +422,10 @@ function initApp() {
 
   function parseNewCommentsForm(comment) {
     const newCommentsForm = crtNewCommentsForm(comment.left, comment.top),
-		  [commentsBody] = newCommentsForm.getElementsByClassName("comments__body"),
-		  [loader] = newCommentsForm.getElementsByClassName("loader"),
-		  commentDate = getDate(comment.timestamp).replace(",", ""),
-		  newComment = crtNewCommentNode(commentDate, comment.message);
+	  [commentsBody] = newCommentsForm.getElementsByClassName("comments__body"),
+	  [loader] = newCommentsForm.getElementsByClassName("loader"),
+	  commentDate = getDate(comment.timestamp).replace(",", ""),
+	  newComment = crtNewCommentNode(commentDate, comment.message);
 
     newComment.dataset.timestamp = comment.timestamp;
     picture.appendChild(newCommentsForm);
@@ -473,7 +473,7 @@ function initApp() {
         el("div", {class: "comments__body"}, [
           el("div", {class: "comment"}, [
             el("div", {class: "loader", style: "display: none;"}, [
-			  el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null)
+	      el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null)
             ])
           ]),
           el("textarea", {class: "comments__input", type: "text", placeholder: "Напишите ответ..."}, null),
@@ -493,10 +493,10 @@ function initApp() {
 
   function appendNewComment(comment, commentsForm) {
     const [commentsBody] = commentsForm.getElementsByClassName("comments__body"),
-		  comments = Array.from(commentsBody.getElementsByClassName("comment")),
-		  commentDate = getDate(comment.timestamp).replace(",", ""),
-		  newComment = crtNewCommentNode(commentDate, comment.message),
-		  nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
+	  comments = Array.from(commentsBody.getElementsByClassName("comment")),
+	  commentDate = getDate(comment.timestamp).replace(",", ""),
+	  newComment = crtNewCommentNode(commentDate, comment.message),
+	  nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
 
     newComment.dataset.timestamp = comment.timestamp;
     commentsBody.insertBefore(newComment, nextComment ? nextComment : comments[comments.length - 1]);
@@ -508,7 +508,7 @@ function initApp() {
 
     for (const id in imgData.comments) {
       const comment = imgData.comments[id],
-        	isPostedComment = app.querySelector(`.comment[data-timestamp="${comment.timestamp}"]`);
+	    isPostedComment = app.querySelector(`.comment[data-timestamp="${comment.timestamp}"]`);
 
       if (comment.left === left && comment.top === top && !isPostedComment) {
         appendNewComment(comment, commentForm);
@@ -544,10 +544,10 @@ function initApp() {
     if (event.target.classList.contains("comments__submit")) {
       event.preventDefault();
       const crntCommentsForm = event.target.parentElement.parentElement,
-			[loader] = crntCommentsForm.getElementsByClassName("loader"),
-			[input] = crntCommentsForm.getElementsByClassName("comments__input"),
-			left = parseInt(crntCommentsForm.style.left),
-			top = parseInt(crntCommentsForm.style.top);
+	    [loader] = crntCommentsForm.getElementsByClassName("loader"),
+	    [input] = crntCommentsForm.getElementsByClassName("comments__input"),
+	    left = parseInt(crntCommentsForm.style.left),
+	    top = parseInt(crntCommentsForm.style.top);
 
       showElement(loader);
       postComment(input.value ? input.value : "\n", left, top);
@@ -635,9 +635,9 @@ function initApp() {
     canvasCtx.lineWidth = penWidth;
 
     let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
-		strokes = [],
-		isDrawing = false,
-		needsRendering = false;
+	strokes = [],
+	isDrawing = false,
+	needsRendering = false;
 
     const changeColor = event => {
       if (event.target.checked) {
@@ -685,7 +685,7 @@ function initApp() {
           socket.send(blob);
           canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
         })
-		.then(() => (strokes = []));
+	.then(() => (strokes = []));
       });
     }
 
@@ -695,7 +695,7 @@ function initApp() {
       if (drawBtn.dataset.state === "selected") {
         isDrawing = true;
         
-		const stroke = [];
+	const stroke = [];
         stroke.push(makePoint(event.offsetX, event.offsetY));
         strokes.push(stroke);
         needsRendering = true;
