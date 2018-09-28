@@ -683,7 +683,6 @@ function initApp() {
 
     const sendMask = () => {
       canvas.toBlob(blob => socket.send(blob));
-      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
     };
 
     canvas.addEventListener("mousedown", event => {
