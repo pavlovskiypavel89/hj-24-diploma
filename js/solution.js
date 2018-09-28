@@ -315,7 +315,7 @@ function initApp() {
     event.preventDefault();
     if (errorMsg.style.display !== "none") { hideElement(errorMsg); }
 
-    if (event.target === event.currentTarget || event.target === image || event.target === errorMsg || event.target.parentElement === errorMsg) {
+    if (event.target === event.currentTarget || event.target === canvas || event.target === errorMsg || event.target.parentElement === errorMsg) {
       if (image.dataset.status !== "load") {
         const file = event.dataTransfer.files[0];
 
