@@ -238,11 +238,12 @@ function initApp() {
   };
 
   const renderApp = () => {
-    const imageSettings = getSessionSettings("imageSettings"),
-      	  menuSettings = getSessionSettings("menuSettings");
-
+    let imageSettings = getSessionSettings("imageSettings"),
+       menuSettings = getSessionSettings("menuSettings"),
+       urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
+    
     image.src = "";
-    if (imageSettings) {
+    if (imageSettings && urlParamID) {
       image.dataset.status = "load";
       image.src = imageSettings.url;
       urlTextarea.removeAttribute("value");
@@ -251,10 +252,13 @@ function initApp() {
       renderComments(imageSettings);
       image.addEventListener("load", () => refreshCanvas(image));
     } else {
-      const urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
       if (urlParamID) {
         isLinkedFromShare = true;
         loadImage({ id: urlParamID });
+      } else {
+        delete sessionStorage.imageSettings;
+        delete sessionStorage.menuSettings;
+        menuSettings = null;
       }
     }
 
@@ -462,7 +466,7 @@ function initApp() {
   function crtNewCommentNode(date, message) {
     return el("div", { class: "comment" }, [
       el("p", { class: "comment__time" }, date),
-      el("p", { class: "comment__message" }, message)
+      el("p", {class: "comment__message", style: "white-space: pre;" }, message)
     ]);
   }
 
@@ -677,10 +681,9 @@ function initApp() {
       });
     }
 
-    function sendMask() {
+    const sendMask = () => {
       canvas.toBlob(blob => socket.send(blob));
-      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-    }
+    };
 
     canvas.addEventListener("mousedown", event => {
       if (drawBtn.dataset.state === "selected") {
@@ -702,11 +705,11 @@ function initApp() {
     });
 
     canvas.addEventListener("mouseup", () => {
-      if (drawBtn.dataset.state === "selected") {	    
+      if (drawBtn.dataset.state === "selected") {
         isDrawing = false;
-        throttle(sendMask, false, 1000)();    
+        throttle(sendMask, false, 1000)();
         strokes = [];
-      }      
+      }
     });
 
     canvas.addEventListener("mouseleave", () => (isDrawing = false));
@@ -795,13 +798,13 @@ function initApp() {
           if (commentsMarker) {
             loadComment(imageSettings, wssResponse.comment.left, wssResponse.comment.top);
           } else {
-            picture.appendChild( crtNewCommentsForm(wssResponse.comment.left, wssResponse.comment.top) );
+            picture.appendChild(crtNewCommentsForm(wssResponse.comment.left, wssResponse.comment.top));
             loadComment(imageSettings, wssResponse.comment.left, wssResponse.comment.top);
           }
         break;
 
         case "mask":
-          canvas.style.background = `url(${wssResponse.url})`;
+           canvas.style.background = `url(${wssResponse.url})`;
         break;
       }
     };
