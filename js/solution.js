@@ -94,22 +94,22 @@ function initApp() {
     sessionStorage.imageSettings = JSON.stringify(imgData);
   };
 
-  function showElement(el) {
+  const showElement = el => {
     el.style.display = "";
-  }
+  };
 
-  function hideElement(el) {
+  const hideElement = el => {
     el.style.display = "none";
-  }
+  };
 
   const refreshCanvas = img => {
     canvas.style.background = "";
-    canvas.width = img.clientWidth;
-    canvas.height = img.clientHeight;
+    canvas.width = img.width;
+    canvas.height = img.height;
     showElement(canvas);
   };
 
-  const hideComments = radioBtn => {
+  const toggleComments = radioBtn => {
     Array.from(app.getElementsByClassName("comments__form")).forEach(comments => {
         if (radioBtn.value === "on") {
           showElement(comments);
@@ -164,8 +164,7 @@ function initApp() {
   const showImage = imgData => {
     image.dataset.status = "load";
     image.src = imgData.url;
-    saveImageSettings(imgData);
-    window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
+	  
     image.addEventListener("load", () => {
       hideElement(preloader);
 
@@ -176,11 +175,14 @@ function initApp() {
       selectMenuModeTo("selected", isLinkedFromShare ? "comments" : "share");
       commentsOn.checked = true;
 
-      initWSSConnection(imgData.id);
-      renderComments(imgData);
       refreshCanvas(image);
       isLinkedFromShare = false;
     });
+	  
+    saveImageSettings(imgData);
+    window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
+    initWSSConnection(imgData.id);
+    if (!isLinkedFromShare) { renderComments(imgData); }
   };
 
   const loadImage = ({ id }) => {
@@ -255,17 +257,18 @@ function initApp() {
       image.dataset.status = "load";
       image.src = imageSettings.url;
 
-      urlTextarea.removeAttribute("value");
-      urlTextarea.value = imageSettings.path;
-
-      initWSSConnection(imageSettings.id);
-      renderComments(imageSettings);
       image.addEventListener("load", () => {
       	picture.style.width = image.width + 'px';
         picture.style.height = image.height + 'px';
         showElement(picture);
       	refreshCanvas(image);
       });
+	    
+      urlTextarea.removeAttribute("value");
+      urlTextarea.value = imageSettings.path;
+
+      initWSSConnection(imageSettings.id);
+      renderComments(imageSettings);
     } else {
       if (urlParamID) {
         isLinkedFromShare = true;
@@ -287,7 +290,6 @@ function initApp() {
       }
       if (menuSettings.displayComments === "hidden") {
         commentsOff.checked = true;
-        hideComments(commentsOff);
       }
     } else {
       selectMenuModeTo("initial");
@@ -300,7 +302,7 @@ function initApp() {
 
   const postImage = (path, file) => {
     const formData = new FormData(),
-					name = file.name.replace(/\.\w*$/, "");
+	  name = file.name.replace(/\.\w*$/, "");
 
     formData.append("title", name);
     formData.append("image", file);
@@ -437,46 +439,6 @@ function initApp() {
   };
 
   ////////////////////////////////////////////////////////////////////////
-
-  function parseNewCommentsForm(comment) {
-    const newCommentsForm = crtNewCommentsForm(comment.left, comment.top),
-	  [commentsBody] = newCommentsForm.getElementsByClassName("comments__body"),
-	  [loader] = newCommentsForm.getElementsByClassName("loader"),
-	  commentDate = getDate(comment.timestamp).replace(",", ""),
-	  newComment = crtNewCommentNode(commentDate, comment.message);
-
-    newComment.dataset.timestamp = comment.timestamp;
-    picture.appendChild(newCommentsForm);
-    commentsBody.insertBefore(newComment, loader.parentElement);
-    return newCommentsForm;
-  }
-
-  function renderComments(imgData) {
-    if (imgData.comments) {
-      const Forms = Object.keys(imgData.comments).reduce((forms, id) => {
-        const commentsMarker = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
-
-        if (forms && commentsMarker) {
-          appendNewComment(imgData.comments[id], commentsMarker.parentElement);
-          return forms;
-        } else {
-          const newCommentsForm = parseNewCommentsForm(imgData.comments[id], id);
-          forms.appendChild(newCommentsForm);
-          return forms;
-        }
-      }, document.createDocumentFragment());
-
-      picture.appendChild(Forms);
-    } else {
-      while (picture.hasChildNodes() && picture.lastElementChild.classList.contains("comments__form")) {
-        picture.removeChild(picture.lastElementChild);
-      }
-    }
-    return imgData;
-  }
-
-  ////////////////////////////////////////////////////////////////////////
-
   function crtNewCommentNode(date, message) {
     return el("div", { class: "comment" }, [
       el("p", { class: "comment__time" }, date),
@@ -520,7 +482,46 @@ function initApp() {
     commentsBody.insertBefore(newComment, nextComment ? nextComment : comments[comments.length - 1]);
   }
 
-  function loadComment(imgData, left, top) {
+  function parseNewCommentsForm(comment) {
+    const newCommentsForm = crtNewCommentsForm(comment.left, comment.top),
+	  [commentsBody] = newCommentsForm.getElementsByClassName("comments__body"),
+	  [loader] = newCommentsForm.getElementsByClassName("loader"),
+	  commentDate = getDate(comment.timestamp).replace(",", ""),
+	  newComment = crtNewCommentNode(commentDate, comment.message);
+
+    newComment.dataset.timestamp = comment.timestamp;
+    picture.appendChild(newCommentsForm);
+    commentsBody.insertBefore(newComment, loader.parentElement);
+    return newCommentsForm;
+  }
+
+  function renderComments(imgData) {
+    if (imgData.comments) {
+      const Forms = Object.keys(imgData.comments).reduce((forms, id) => {
+        const commentsMarker = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
+
+        if (forms && commentsMarker) {
+          appendNewComment(imgData.comments[id], commentsMarker.parentElement);
+          return forms;
+        } else {
+          const newCommentsForm = parseNewCommentsForm(imgData.comments[id], id);
+          forms.appendChild(newCommentsForm);
+          return forms;
+        }
+      }, document.createDocumentFragment());
+
+      picture.appendChild(Forms);
+    } else {
+      while (picture.hasChildNodes() && picture.lastElementChild.classList.contains("comments__form")) {
+        picture.removeChild(picture.lastElementChild);
+      }
+    }
+    return imgData;
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+
+  const loadComment = (imgData, left, top) => {
     const commentForm = app.querySelector(`.comments__marker[data-left="${left}"][data-top="${top}"]`).parentElement,
       	  [loader] = commentForm.getElementsByClassName("loader");
 
@@ -536,10 +537,10 @@ function initApp() {
     }
 
     const menuSettings = getSessionSettings("menuSettings");
-    if (menuSettings.displayComments === "hidden") { hideComments(commentsOff); }
+    if (menuSettings.displayComments === "hidden") { toggleComments(commentsOff); }
 
     return imgData;
-  }
+  };
 
   const postComment = (message, left, top) => {
     const id = getSessionSettings("imageSettings").id,
@@ -585,7 +586,7 @@ function initApp() {
 
   const toggleCommentsShow = event => {
     if (event.target.classList.contains("menu__toggle")) {
-      hideComments(event.target);
+      toggleComments(event.target);
 
       const menuSettings = getSessionSettings("menuSettings");
       menuSettings.displayComments = menuSettings.displayComments ? "" : "hidden";
@@ -653,13 +654,13 @@ function initApp() {
       strokes = [],
       needsRendering = false;
 	
-  function drawPoint(ctx, point) {
+  const drawPoint = (ctx, point) => {
       ctx.beginPath();
       ctx.arc(...point, penWidth / 2, 0, 2 * Math.PI);
       ctx.fill();
-    }
+  };
 
-  function drawStroke(ctx, points) {
+  const drawStroke = (ctx, points) => {
     ctx.beginPath();
     ctx.lineCap = ctx.lineJoin = "round";
     ctx.moveTo(...points[0]);
@@ -667,18 +668,18 @@ function initApp() {
       ctx.lineTo(...points[i], ...points[i + 1]);
     }
     ctx.stroke();
-  }
+  };
 
-  function makePoint(x, y) {
+  const makePoint = (x, y) => {
     return [x, y];
-  }
+  };
 
-  function draw(ctx) {
+  const draw = ctx => {
     strokes.forEach(stroke => {
       drawPoint(ctx, stroke[0]);
       drawStroke(ctx, stroke);
     });
-  }
+  };
 
   const sendMask = () => {
     canvas.toBlob(blob => socket.send(blob));
@@ -793,8 +794,11 @@ function initApp() {
           }
 		      
           if (wssResponse.pic.comments) {
-            //renderComments(wssResponse.pic);
-          };
+            renderComments(wssResponse.pic);
+            if (getSessionSettings("menuSettings").displayComments === "hidden") {
+	      toggleComments(commentsOff);
+	    }
+          }
         break;
 
         case "comment":
@@ -837,7 +841,7 @@ function initApp() {
 	  
     let crntMenuLeftPos = menu.getBoundingClientRect().left;
     while (menu.offsetHeight > defaultMenuHeight) {
-      menu.style.left = (--crntMenuLeftPos) + 'px';
+      menu.style.left = (--crntMenuLeftPos) + "px";
     } 
 	  
     window.requestAnimationFrame(tick);
