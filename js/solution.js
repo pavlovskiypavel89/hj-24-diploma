@@ -94,13 +94,13 @@ function initApp() {
     sessionStorage.imageSettings = JSON.stringify(imgData);
   };
 
-  const showElement = el => {
+  function showElement(el) {
     el.style.display = "";
-  };
+  }
 
-  const hideElement = el => {
+  function hideElement(el) {
     el.style.display = "none";
-  };
+  }
 
   const refreshCanvas = img => {
     canvas.style.background = "";
