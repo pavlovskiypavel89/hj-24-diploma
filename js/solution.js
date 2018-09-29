@@ -31,13 +31,29 @@ function initApp() {
     };
     return pointShifts;
   })();
+	
+  const picture = (() => {
+    const picture = document.createElement("div"),
+	  canvas = document.createElement("canvas");
 
-  const apiURL = "//neto-api.herokuapp.com/pic";
+    picture.id = "picture";
+    picture.classList.add("current-image");
+    picture.appendChild(image);
 
+    canvas.classList.add("current-image");
+    picture.insertBefore(canvas, image.nextElementSibling);
+    hideElement(canvas);
+
+    app.insertBefore(picture, menu.nextElementSibling);
+    return picture;
+  })();
+
+  const apiURL = "//neto-api.herokuapp.com/pic",
+        canvas = picture.querySelector("canvas.current-image");
   let socket,
       isLinkedFromShare = false;
 
-  ////////////////////////////////////////////////////////////////////////
+  /********************** Общие функции *************************/
 
   const throttle = (cb, isAnimation, delay) => {
     let isWaiting = false;
@@ -107,12 +123,12 @@ function initApp() {
   const getDate = timestamp => {
     const date = new Date(timestamp),
 	  options = {
-		  day: "2-digit",
-		  month: "2-digit",
-		  year: "2-digit",
-		  hour: "numeric",
-		  minute: "2-digit",
-		  second: "2-digit"
+	    day: "2-digit",
+	    month: "2-digit",
+	    year: "2-digit",
+	    hour: "numeric",
+	    minute: "2-digit",
+	    second: "2-digit"
 	  };
     return date.toLocaleString("ru-RU", options);
   };
@@ -137,46 +153,7 @@ function initApp() {
     return element;
   };
 
-  ////////////////////////////////////////////////////////////////////////
-
-  const postError = (header, message) => {
-    errorHeader.textContent = header;
-    errorText.textContent = message;
-    showElement(errorMsg);
-  };
-
-  const showImage = imgData => {
-    image.dataset.status = "load";
-    image.src = imgData.url;
-	  
-    image.addEventListener("load", () => {
-      hideElement(preloader);
-
-      picture.style.width = image.width + 'px';
-      picture.style.height = image.height + 'px';
-
-      delete sessionStorage.menuSettings;
-      selectMenuModeTo("selected", isLinkedFromShare ? "comments" : "share");
-      commentsOn.checked = true;
-
-      refreshCanvas(image);
-      isLinkedFromShare = false;
-    });
-	  
-    saveImageSettings(imgData);
-    window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
-    initWSSConnection(imgData.id);
-    if (!isLinkedFromShare) { renderComments(imgData); }
-  };
-
-  const loadImage = ({ id }) => {
-    fetch("https:" + apiURL + "/" + id)
-    .then(checkResponseStatus)
-    .then(showImage)
-    .catch(err => postError(errorHeader.textContent, err.message));
-  };
-
-  ////////////////////////////////////////////////////////////////////////
+  /********************** Переключение меню *************************/
 
   const selectMenuModeTo = (mode, selectedItemType) => {
     switch (mode) {
@@ -230,132 +207,7 @@ function initApp() {
     }
   };
 
-  const renderApp = () => {
-    let imageSettings = getSessionSettings("imageSettings"),
-	 menuSettings = getSessionSettings("menuSettings"),
-	 urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
-    
-    image.src = "";
-    if (imageSettings && urlParamID) {
-      hideElement(picture);
-      image.dataset.status = "load";
-      image.src = imageSettings.url;
-
-      image.addEventListener("load", () => {
-      	picture.style.width = image.width + 'px';
-        picture.style.height = image.height + 'px';
-        showElement(picture);
-      	refreshCanvas(image);
-      });
-	    
-      urlTextarea.removeAttribute("value");
-      urlTextarea.value = imageSettings.path;
-
-      initWSSConnection(imageSettings.id);
-      renderComments(imageSettings);
-    } else {
-      if (urlParamID) {
-        isLinkedFromShare = true;
-        loadImage({ id: urlParamID });
-      } else {
-	if (menuSettings) {
-      	  menu.style.left = menuSettings.left + "px";
-      	  menu.style.top = menuSettings.top + "px";
-      	}
-        delete sessionStorage.imageSettings;
-        delete sessionStorage.menuSettings;
-        menuSettings = null;
-      }
-    }
-
-    if (menuSettings) {
-      menu.style.left = menuSettings.left + "px";
-      menu.style.top = menuSettings.top + "px";
-      selectMenuModeTo(menuSettings.mode, menuSettings.selectItemType);
-
-      if (menuSettings.selectItemType === "draw") {
-        image.addEventListener("load", initDraw);
-      }
-      if (menuSettings.displayComments === "hidden") {
-        commentsOff.checked = true;
-      }
-    } else {
-      selectMenuModeTo("initial");
-    }
-  };
-	
-  const picture = (() => {
-    const picture = document.createElement("div"),
-	  canvas = document.createElement("canvas");
-
-    picture.id = "picture";
-    picture.classList.add("current-image");
-    picture.appendChild(image);
-
-    canvas.classList.add("current-image");
-    picture.insertBefore(canvas, image.nextElementSibling);
-    hideElement(canvas);
-
-    app.insertBefore(picture, menu.nextElementSibling);
-    return picture;
-  })();
-
-  renderApp();
-
-  ////////////////////////////////////////////////////////////////////////
-
-  const postImage = (path, file) => {
-    const formData = new FormData(),
-	  name = file.name.replace(/\.\w*$/, "");
-
-    formData.append("title", name);
-    formData.append("image", file);
-
-    showElement(preloader);
-    fetch(path, {
-      body: formData,
-      method: "POST"
-    })
-    .then(checkResponseStatus)
-    .then(loadImage)
-    .catch(err => postError(errorHeader.textContent, err.message));
-  };
-
-  const uploadNewByInput = event => {
-    if (errorMsg.style.display !== "none") {
-      hideElement(errorMsg);
-    }
-
-    if (newImgBtn === event.target || newImgBtn === event.target.parentElement) {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = "image/jpeg, image/png";
-
-      input.addEventListener("change", event => postImage("https:" + apiURL, event.currentTarget.files[0]));
-      input.dispatchEvent(new MouseEvent(event.type, event));
-    }
-  };
-
-  const uploadNewByDrop = event => {
-    event.preventDefault();
-    if (errorMsg.style.display !== "none") { hideElement(errorMsg); }
-
-    if (event.target === event.currentTarget || event.target === canvas || event.target === errorMsg || event.target.parentElement === errorMsg) {
-      if (image.dataset.status !== "load") {
-        const file = event.dataTransfer.files[0];
-
-        if (/^image\/[(jpeg) | (png)]/.test(file.type)) {
-          postImage("https:" + apiURL, file);
-        } else {
-          postError("Ошибка", "Неверный формат файла. Пожалуйста, выберите изображение в формате .jpg или .png.");
-        }
-      } else {
-        postError("Ошибка", 'Чтобы загрузить новое изображение, пожалуйста, воспользуйтесь пунктом "Загрузить новое" в меню');
-      }
-    }
-  };
-
-  ////////////////////////////////////////////////////////////////////////
+  /********************** Drag'n'Drop меню *************************/
 
   let dragged = null,
       draggedSettings = null;
@@ -414,7 +266,154 @@ function initApp() {
     }
   };
 
-  ////////////////////////////////////////////////////////////////////////
+  /********************** Загрузка изображения *************************/
+
+  const postError = (header, message) => {
+    errorHeader.textContent = header;
+    errorText.textContent = message;
+    showElement(errorMsg);
+  };
+
+  const showImage = imgData => {
+    image.dataset.status = "load";
+    image.src = imgData.url;
+    saveImageSettings(imgData);
+    window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
+
+    initWSSConnection(imgData.id);
+    if (!isLinkedFromShare) { renderComments(imgData); }
+	  
+    image.addEventListener("load", () => {
+      hideElement(preloader);
+
+      picture.style.width = image.width + 'px';
+      picture.style.height = image.height + 'px';
+
+      delete sessionStorage.menuSettings;
+      selectMenuModeTo("selected", isLinkedFromShare ? "comments" : "share");
+      commentsOn.checked = true;
+
+      refreshCanvas(image);
+      isLinkedFromShare = false;
+    });
+  };
+
+  const loadImage = ({ id }) => {
+    fetch("https:" + apiURL + "/" + id)
+    .then(checkResponseStatus)
+    .then(showImage)
+    .catch(err => postError(errorHeader.textContent, err.message));
+  };
+
+  const postImage = (path, file) => {
+    const formData = new FormData(),
+	  name = file.name.replace(/\.\w*$/, "");
+
+    formData.append("title", name);
+    formData.append("image", file);
+
+    showElement(preloader);
+    fetch(path, {
+      body: formData,
+      method: "POST"
+    })
+    .then(checkResponseStatus)
+    .then(loadImage)
+    .catch(err => postError(errorHeader.textContent, err.message));
+  };
+
+  const uploadNewByInput = event => {
+    if (errorMsg.style.display !== "none") {
+      hideElement(errorMsg);
+    }
+
+    if (newImgBtn === event.target || newImgBtn === event.target.parentElement) {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/jpeg, image/png";
+
+      input.addEventListener("change", event => postImage("https:" + apiURL, event.currentTarget.files[0]));
+      input.dispatchEvent(new MouseEvent(event.type, event));
+    }
+  };
+
+  const uploadNewByDrop = event => {
+    event.preventDefault();
+    if (errorMsg.style.display !== "none") { hideElement(errorMsg); }
+
+    if (event.target === event.currentTarget || event.target === canvas || event.target === errorMsg || event.target.parentElement === errorMsg) {
+      if (image.dataset.status !== "load") {
+        const file = event.dataTransfer.files[0];
+
+        if (/^image\/[(jpeg) | (png)]/.test(file.type)) {
+          postImage("https:" + apiURL, file);
+        } else {
+          postError("Ошибка", "Неверный формат файла. Пожалуйста, выберите изображение в формате .jpg или .png.");
+        }
+      } else {
+        postError("Ошибка", 'Чтобы загрузить новое изображение, пожалуйста, воспользуйтесь пунктом "Загрузить новое" в меню');
+      }
+    }
+  };
+
+  /********************** Отрисовка запуска приложения *************************/
+
+  const renderApp = () => {
+    let imageSettings = getSessionSettings("imageSettings"),
+	 menuSettings = getSessionSettings("menuSettings"),
+	 urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
+    
+    image.src = "";
+    if (imageSettings && urlParamID) {
+      hideElement(picture);
+      image.dataset.status = "load";
+      image.src = imageSettings.url;
+
+      urlTextarea.removeAttribute("value");
+      urlTextarea.value = imageSettings.path;
+
+      initWSSConnection(imageSettings.id);
+
+      image.addEventListener("load", () => {
+      	picture.style.width = image.width + 'px';
+        picture.style.height = image.height + 'px';
+        showElement(picture);
+      	refreshCanvas(image);
+      });
+    } else {
+      if (urlParamID) {
+        isLinkedFromShare = true;
+        loadImage({ id: urlParamID });
+      } else {
+      	if (menuSettings) {
+      	  menu.style.left = menuSettings.left + "px";
+      	  menu.style.top = menuSettings.top + "px";
+      	}
+        delete sessionStorage.imageSettings;
+        delete sessionStorage.menuSettings;
+        menuSettings = null;
+      }
+    }
+
+    if (menuSettings) {
+      menu.style.left = menuSettings.left + "px";
+      menu.style.top = menuSettings.top + "px";
+      selectMenuModeTo(menuSettings.mode, menuSettings.selectItemType);
+
+      if (menuSettings.selectItemType === "draw") {
+        image.addEventListener("load", initDraw);
+      }
+      if (menuSettings.displayComments === "hidden") {
+        commentsOff.checked = true;
+      }
+    } else {
+      selectMenuModeTo("initial");
+    }
+  };
+
+  renderApp();
+
+  /********************** Копирование ссылки в режиме "Поделиться" *************************/
 
   const checkSelectionResult = () => {
     try {
@@ -442,7 +441,8 @@ function initApp() {
     }
   };
 
-  ////////////////////////////////////////////////////////////////////////
+  /********************** Создание и рендеринг комментариев *************************/
+
   function crtNewCommentNode(date, message) {
     return el("div", { class: "comment" }, [
       el("p", { class: "comment__time" }, date),
@@ -523,7 +523,7 @@ function initApp() {
     return imgData;
   }
 
-  ////////////////////////////////////////////////////////////////////////
+  /********************** Отправка и добавление комментариев *************************/
 
   const loadComment = (imgData, left, top) => {
     const commentForm = app.querySelector(`.comments__marker[data-left="${left}"][data-top="${top}"]`).parentElement,
@@ -531,7 +531,7 @@ function initApp() {
 
     for (const id in imgData.comments) {
       const comment = imgData.comments[id],
-	    isPostedComment = app.querySelector(`.comment[data-timestamp="${comment.timestamp}"]`);
+	  isPostedComment = app.querySelector(`.comment[data-timestamp="${comment.timestamp}"]`);
 
       if (comment.left === left && comment.top === top && !isPostedComment) {
         appendNewComment(comment, commentForm);
@@ -586,7 +586,7 @@ function initApp() {
     }
   };
 
-  ////////////////////////////////////////////////////////////////////////
+  /********************** Работа с формой комментария *************************/
 
   const toggleCommentsShow = event => {
     if (event.target.classList.contains("menu__toggle")) {
@@ -648,10 +648,9 @@ function initApp() {
     }
   };
 
-  ////////////////////////////////////////////////////////////////////////
+  /********************** Рисование в канвас *************************/
 
-  const canvas = picture.querySelector("canvas.current-image"),
-	penWidth = 4;
+  const penWidth = 4;
 
   let canvasCtx,
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
@@ -740,7 +739,7 @@ function initApp() {
     canvas.addEventListener("mouseleave", () => (isDrawing = false));
   }
 
-  ///////////////////////////////////////////////////////////////////////
+  /********************** Обработчики событий *************************/
 
   //Загрузка файла на сервер:
   menu.addEventListener("click", uploadNewByInput);
@@ -836,6 +835,8 @@ function initApp() {
     window.addEventListener("beforeunload", () => socket.close(1000, "Сессия успешно завершена"));
     socket.addEventListener("error", error => console.error(`Ошибка: ${error.message}`));
   }
+
+  /******************** Плавная отрисовка линий при рисовании и коррекция положения меню по ширине *****************/
 
   (function tick() {
     if (needsRendering) {
