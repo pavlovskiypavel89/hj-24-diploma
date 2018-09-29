@@ -281,6 +281,7 @@ function initApp() {
     window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
 
     initWSSConnection(imgData.id);
+    if (!isLinkedFromShare) { renderComments(imgData); }
 	  
     image.addEventListener("load", () => {
       hideElement(preloader);
