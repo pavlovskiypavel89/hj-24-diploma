@@ -21,8 +21,8 @@ function initApp() {
 	markerBounds = app.getElementsByClassName("comments__marker")[0].getBoundingClientRect(),
 	formBounds = app.getElementsByClassName("comments__form")[0].getBoundingClientRect(),
 	defaultCommentsForm = app.removeChild(app.getElementsByClassName("comments__form")[0]);
-
-  const apiURL = "//neto-api.herokuapp.com/pic";
+  
+  const defaultMenuHeight = menu.offsetHeight;
 
   const clickPointShifts = (() => {
     const pointShifts = {
@@ -48,11 +48,9 @@ function initApp() {
     return picture;
   })();
 
-  const canvas = picture.querySelector("canvas.current-image"),
-	penWidth = 4;
+  const apiURL = "//neto-api.herokuapp.com/pic";
 
   let socket,
-      checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
       isLinkedFromShare = false;
 
   ////////////////////////////////////////////////////////////////////////
@@ -647,15 +645,52 @@ function initApp() {
 
   ////////////////////////////////////////////////////////////////////////
 
+  const canvas = picture.querySelector("canvas.current-image"),
+	penWidth = 4;
+
+  let canvasCtx,
+      checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
+      strokes = [],
+      needsRendering = false;
+	
+  function drawPoint(ctx, point) {
+      ctx.beginPath();
+      ctx.arc(...point, penWidth / 2, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+  function drawStroke(ctx, points) {
+    ctx.beginPath();
+    ctx.lineCap = ctx.lineJoin = "round";
+    ctx.moveTo(...points[0]);
+    for (let i = 1; i < points.length - 1; i++) {
+      ctx.lineTo(...points[i], ...points[i + 1]);
+    }
+    ctx.stroke();
+  }
+
+  function makePoint(x, y) {
+    return [x, y];
+  }
+
+  function draw(ctx) {
+    strokes.forEach(stroke => {
+      drawPoint(ctx, stroke[0]);
+      drawStroke(ctx, stroke);
+    });
+  }
+
+  const sendMask = () => {
+    canvas.toBlob(blob => socket.send(blob));
+  };
+
   function initDraw(event) {
-    const canvasCtx = canvas.getContext("2d");
+    canvasCtx = canvas.getContext("2d");
     canvasCtx.strokeStyle = canvasCtx.fillStyle = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor;
     canvasCtx.lineWidth = penWidth;
 
     let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
-	strokes = [],
-	isDrawing = false,
-	needsRendering = false;
+	isDrawing = false;
 
     const changeColor = event => {
       if (event.target.checked) {
@@ -669,37 +704,6 @@ function initApp() {
     };
 
     drawTools.addEventListener("change", changeColor);
-
-    function drawPoint(point) {
-      canvasCtx.beginPath();
-      canvasCtx.arc(...point, penWidth / 2, 0, 2 * Math.PI);
-      canvasCtx.fill();
-    }
-
-    function drawStroke(points) {
-      canvasCtx.beginPath();
-      canvasCtx.lineCap = canvasCtx.lineJoin = "round";
-      canvasCtx.moveTo(...points[0]);
-      for (let i = 1; i < points.length - 1; i++) {
-        canvasCtx.lineTo(...points[i], ...points[i + 1]);
-      }
-      canvasCtx.stroke();
-    }
-
-    function makePoint(x, y) {
-      return [x, y];
-    }
-
-    function draw() {
-      strokes.forEach(stroke => {
-        drawPoint(stroke[0]);
-        drawStroke(stroke);
-      });
-    }
-
-    const sendMask = () => {
-      canvas.toBlob(blob => socket.send(blob));
-    };
 
     canvas.addEventListener("mousedown", event => {
       if (drawBtn.dataset.state === "selected") {
@@ -729,14 +733,6 @@ function initApp() {
     });
 
     canvas.addEventListener("mouseleave", () => (isDrawing = false));
-
-    (function tick() {
-      if (needsRendering) {
-        draw();
-        needsRendering = false;
-      }
-      window.requestAnimationFrame(tick);
-    })();
   }
 
   ///////////////////////////////////////////////////////////////////////
@@ -803,7 +799,7 @@ function initApp() {
 
         case "comment":
           const imageSettings = getSessionSettings("imageSettings"),
-								commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
+		commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
 
           if (imageSettings.comments) {
             addCommentInDirectory(wssResponse.comment, imageSettings.comments);
@@ -832,6 +828,20 @@ function initApp() {
     window.addEventListener("beforeunload", () => socket.close(1000, "Сессия успешно завершена"));
     socket.addEventListener("error", error => console.error(`Ошибка: ${error.message}`));
   }
+
+  (function tick() {
+    if (needsRendering) {
+      draw(canvasCtx);
+      needsRendering = false;
+    }
+	  
+    let crntMenuLeftPos = menu.getBoundingClientRect().left;
+    while (menu.offsetHeight > defaultMenuHeight) {
+      menu.style.left = (--crntMenuLeftPos) + 'px';
+    } 
+	  
+    window.requestAnimationFrame(tick);
+  })();
 }
 
 document.addEventListener("DOMContentLoaded", initApp);
