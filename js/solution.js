@@ -372,9 +372,9 @@ function initApp() {
       urlTextarea.value = imageSettings.path;
 
       try {
-        initWSSConnection(imgData.id);
+        initWSSConnection(imageSettings.id);
       } catch(err) {
-        renderComments(imgData); 	
+        renderComments(imageSettings); 	
       }
 
       image.addEventListener("load", () => {
