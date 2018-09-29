@@ -371,11 +371,7 @@ function initApp() {
       urlTextarea.removeAttribute("value");
       urlTextarea.value = imageSettings.path;
 
-      try {
-        initWSSConnection(imageSettings.id);
-      } catch(err) {
-        renderComments(imageSettings); 	
-      }
+      initWSSConnection(imageSettings.id);
 
       image.addEventListener("load", () => {
       	picture.style.width = image.width + 'px';
