@@ -34,7 +34,7 @@ function initApp() {
 
   const picture = (() => {
     const picture = document.createElement("div"),
-					canvas = document.createElement("canvas");
+	  canvas = document.createElement("canvas");
 
     picture.id = "picture";
     picture.classList.add("current-image");
@@ -49,7 +49,7 @@ function initApp() {
   })();
 
   const canvas = picture.querySelector("canvas.current-image"),
-				penWidth = 4;
+	penWidth = 4;
 
   let socket,
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
@@ -105,7 +105,7 @@ function initApp() {
   }
 
   const refreshCanvas = img => {
-  	canvas.style.background = "";
+    canvas.style.background = "";
     canvas.width = img.clientWidth;
     canvas.height = img.clientHeight;
     showElement(canvas);
@@ -124,14 +124,14 @@ function initApp() {
 
   const getDate = timestamp => {
     const date = new Date(timestamp),
-					options = {
-						day: "2-digit",
-						month: "2-digit",
-						year: "2-digit",
-						hour: "numeric",
-						minute: "2-digit",
-						second: "2-digit"
-					};
+	  options = {
+		  day: "2-digit",
+		  month: "2-digit",
+		  year: "2-digit",
+		  hour: "numeric",
+		  minute: "2-digit",
+		  second: "2-digit"
+	  };
     return date.toLocaleString("ru-RU", options);
   };
 
@@ -248,12 +248,12 @@ function initApp() {
 
   const renderApp = () => {
     let imageSettings = getSessionSettings("imageSettings"),
-				 menuSettings = getSessionSettings("menuSettings"),
-				 urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
+	 menuSettings = getSessionSettings("menuSettings"),
+	 urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
     
     image.src = "";
     if (imageSettings && urlParamID) {
-	  hideElement(picture);
+      hideElement(picture);
       image.dataset.status = "load";
       image.src = imageSettings.url;
 
@@ -442,10 +442,10 @@ function initApp() {
 
   function parseNewCommentsForm(comment) {
     const newCommentsForm = crtNewCommentsForm(comment.left, comment.top),
-					[commentsBody] = newCommentsForm.getElementsByClassName("comments__body"),
-					[loader] = newCommentsForm.getElementsByClassName("loader"),
-					commentDate = getDate(comment.timestamp).replace(",", ""),
-					newComment = crtNewCommentNode(commentDate, comment.message);
+	  [commentsBody] = newCommentsForm.getElementsByClassName("comments__body"),
+	  [loader] = newCommentsForm.getElementsByClassName("loader"),
+	  commentDate = getDate(comment.timestamp).replace(",", ""),
+	  newComment = crtNewCommentNode(commentDate, comment.message);
 
     newComment.dataset.timestamp = comment.timestamp;
     picture.appendChild(newCommentsForm);
@@ -513,10 +513,10 @@ function initApp() {
 
   function appendNewComment(comment, commentsForm) {
     const [commentsBody] = commentsForm.getElementsByClassName("comments__body"),
-		comments = Array.from(commentsBody.getElementsByClassName("comment")),
-		commentDate = getDate(comment.timestamp).replace(",", ""),
-		newComment = crtNewCommentNode(commentDate, comment.message),
-		nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
+	  comments = Array.from(commentsBody.getElementsByClassName("comment")),
+	  commentDate = getDate(comment.timestamp).replace(",", ""),
+	  newComment = crtNewCommentNode(commentDate, comment.message),
+	  nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
 
     newComment.dataset.timestamp = comment.timestamp;
     commentsBody.insertBefore(newComment, nextComment ? nextComment : comments[comments.length - 1]);
@@ -564,10 +564,10 @@ function initApp() {
     if (event.target.classList.contains("comments__submit")) {
       event.preventDefault();
       const crntCommentsForm = event.target.parentElement.parentElement,
-			[loader] = crntCommentsForm.getElementsByClassName("loader"),
-			[input] = crntCommentsForm.getElementsByClassName("comments__input"),
-			left = parseInt(crntCommentsForm.style.left),
-			top = parseInt(crntCommentsForm.style.top);
+	    [loader] = crntCommentsForm.getElementsByClassName("loader"),
+	    [input] = crntCommentsForm.getElementsByClassName("comments__input"),
+	    left = parseInt(crntCommentsForm.style.left),
+	    top = parseInt(crntCommentsForm.style.top);
 
       showElement(loader);
       postComment(input.value ? input.value : "\n", left, top);
@@ -653,9 +653,9 @@ function initApp() {
     canvasCtx.lineWidth = penWidth;
 
     let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
-				strokes = [],
-				isDrawing = false,
-				needsRendering = false;
+	strokes = [],
+	isDrawing = false,
+	needsRendering = false;
 
     const changeColor = event => {
       if (event.target.checked) {
