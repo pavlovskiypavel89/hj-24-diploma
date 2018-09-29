@@ -1,32 +1,43 @@
 "use strict";
 function initApp() {
   const [app] = document.getElementsByClassName("app"),
-	[menu] = app.getElementsByClassName("menu"),
-	[burgerBtn] = menu.getElementsByClassName("burger"),
-	[newImgBtn] = menu.getElementsByClassName("new"),
-	[commentsBtn] = menu.getElementsByClassName("comments"),
-	[commentsTools] = menu.getElementsByClassName("comments-tools"),
-	commentsOff = document.getElementById("comments-off"),
-	[marker] = app.getElementsByClassName("comments__marker"),
-	[drawBtn] = menu.getElementsByClassName("draw"),
-	[drawTools] = menu.getElementsByClassName("draw-tools"),
-	[shareBtn] = menu.getElementsByClassName("share"),
-	[shareTools] = menu.getElementsByClassName("share-tools"),
-	[urlTextarea] = shareTools.getElementsByClassName("menu__url"),
-	[defaultCommentsForm] = app.removeChild(app.getElementsByClassName("comments__form")[0]),
-	[image] = app.getElementsByClassName("current-image"),
-	[preloader] = app.getElementsByClassName("image-loader"),
-	[errorMsg] = app.getElementsByClassName("error"),
-	[errorHeader] = errorMsg.getElementsByClassName("error__header"),
-	[errorText] = errorMsg.getElementsByClassName("error__message");
+		[menu] = app.getElementsByClassName("menu"),
+		[burgerBtn] = menu.getElementsByClassName("burger"),
+		[newImgBtn] = menu.getElementsByClassName("new"),
+		[commentsBtn] = menu.getElementsByClassName("comments"),
+		[commentsTools] = menu.getElementsByClassName("comments-tools"),
+		commentsOn = document.getElementById("comments-on"),
+		commentsOff = document.getElementById("comments-off"),
+		[drawBtn] = menu.getElementsByClassName("draw"),
+		[drawTools] = menu.getElementsByClassName("draw-tools"),
+		[shareBtn] = menu.getElementsByClassName("share"),
+		[shareTools] = menu.getElementsByClassName("share-tools"),
+		[urlTextarea] = shareTools.getElementsByClassName("menu__url"),
+		[image] = app.getElementsByClassName("current-image"),
+		[preloader] = app.getElementsByClassName("image-loader"),
+		[errorMsg] = app.getElementsByClassName("error"),
+		[errorHeader] = errorMsg.getElementsByClassName("error__header"),
+		[errorText] = errorMsg.getElementsByClassName("error__message"),
+		markerBounds = app.getElementsByClassName("comments__marker")[0].getBoundingClientRect(),
+		formBounds = app.getElementsByClassName("comments__form")[0].getBoundingClientRect(),
+		defaultCommentsForm = app.removeChild(app.getElementsByClassName("comments__form")[0]);
 
   const apiURL = "//neto-api.herokuapp.com/pic";
 
+  const clickPointShifts = (() => {
+    const pointShifts = {
+      left: markerBounds.left - formBounds.left + markerBounds.width / 2,
+      top: markerBounds.top - formBounds.top + markerBounds.height
+    };
+    return pointShifts;
+  })();
+
   const picture = (() => {
     const picture = document.createElement("div"),
-	  canvas = document.createElement("canvas");
+					canvas = document.createElement("canvas");
 
     picture.id = "picture";
+    picture.classList.add("current-image");
     picture.appendChild(image);
 
     canvas.classList.add("current-image");
@@ -37,18 +48,8 @@ function initApp() {
     return picture;
   })();
 
-  const clickPointShifts = (() => {
-    const pointShifts = {},
-	  markerBounds = marker.getBoundingClientRect(),
-	  formBounds = marker.parentElement.getBoundingClientRect();
-	  
-    pointShifts.left = markerBounds.left - formBounds.left + markerBounds.width / 2;
-    pointShifts.top = markerBounds.top - formBounds.top + markerBounds.height;
-    return pointShifts;
-  })();
-
   const canvas = picture.querySelector("canvas.current-image"),
-	penWidth = 4;
+				penWidth = 4;
 
   let socket,
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
@@ -104,6 +105,7 @@ function initApp() {
   }
 
   const refreshCanvas = img => {
+  	canvas.style.background = "";
     canvas.width = img.clientWidth;
     canvas.height = img.clientHeight;
     showElement(canvas);
@@ -122,14 +124,14 @@ function initApp() {
 
   const getDate = timestamp => {
     const date = new Date(timestamp),
-	  options = {
-		day: "2-digit",
-		month: "2-digit",
-		year: "2-digit",
-		hour: "numeric",
-		minute: "2-digit",
-		second: "2-digit"
-	  };
+					options = {
+						day: "2-digit",
+						month: "2-digit",
+						year: "2-digit",
+						hour: "numeric",
+						minute: "2-digit",
+						second: "2-digit"
+					};
     return date.toLocaleString("ru-RU", options);
   };
 
@@ -168,7 +170,14 @@ function initApp() {
     window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
     image.addEventListener("load", () => {
       hideElement(preloader);
+
+      picture.style.width = image.width + 'px';
+      picture.style.height = image.height + 'px';
+
+      delete sessionStorage.menuSettings;
       selectMenuModeTo("selected", isLinkedFromShare ? "comments" : "share");
+      commentsOn.checked = true;
+
       initWSSConnection(imgData.id);
       renderComments(imgData);
       refreshCanvas(image);
@@ -239,18 +248,26 @@ function initApp() {
 
   const renderApp = () => {
     let imageSettings = getSessionSettings("imageSettings"),
-       menuSettings = getSessionSettings("menuSettings"),
-       urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
+				 menuSettings = getSessionSettings("menuSettings"),
+				 urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
     
     image.src = "";
     if (imageSettings && urlParamID) {
+	  hideElement(picture);
       image.dataset.status = "load";
       image.src = imageSettings.url;
+
       urlTextarea.removeAttribute("value");
       urlTextarea.value = imageSettings.path;
+
       initWSSConnection(imageSettings.id);
       renderComments(imageSettings);
-      image.addEventListener("load", () => refreshCanvas(image));
+      image.addEventListener("load", () => {
+      	picture.style.width = image.width + 'px';
+        picture.style.height = image.height + 'px';
+        showElement(picture);
+      	refreshCanvas(image);
+      });
     } else {
       if (urlParamID) {
         isLinkedFromShare = true;
@@ -285,7 +302,7 @@ function initApp() {
 
   const postImage = (path, file) => {
     const formData = new FormData(),
-     	  name = file.name.replace(/\.\w*$/, "");
+					name = file.name.replace(/\.\w*$/, "");
 
     formData.append("title", name);
     formData.append("image", file);
@@ -416,7 +433,6 @@ function initApp() {
   const copyURL = event => {
     if (event.target.classList.contains("menu_copy")) {
       urlTextarea.select();
-      urlTextarea.blur();
       checkSelectionResult();
       clearSelection();
     }
@@ -426,10 +442,10 @@ function initApp() {
 
   function parseNewCommentsForm(comment) {
     const newCommentsForm = crtNewCommentsForm(comment.left, comment.top),
-	  [commentsBody] = newCommentsForm.getElementsByClassName("comments__body"),
-	  [loader] = newCommentsForm.getElementsByClassName("loader"),
-	  commentDate = getDate(comment.timestamp).replace(",", ""),
-	  newComment = crtNewCommentNode(commentDate, comment.message);
+					[commentsBody] = newCommentsForm.getElementsByClassName("comments__body"),
+					[loader] = newCommentsForm.getElementsByClassName("loader"),
+					commentDate = getDate(comment.timestamp).replace(",", ""),
+					newComment = crtNewCommentNode(commentDate, comment.message);
 
     newComment.dataset.timestamp = comment.timestamp;
     picture.appendChild(newCommentsForm);
@@ -474,10 +490,10 @@ function initApp() {
     return el("form", {class: "comments__form", style: `left: ${left}px; top: ${top}px;`}, [
         el("span", {class: "comments__marker"}, null),
         el("input", {type: "checkbox", class: "comments__marker-checkbox"}, null),
-        el("div", {class: "comments__body"}, [
+        el("div", {class: "comments__body", style: "overflow-y: auto"}, [
           el("div", {class: "comment"}, [
             el("div", {class: "loader", style: "display: none;"}, [
-	        el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null)
+          el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null), el("span", null, null)
             ])
           ]),
           el("textarea", {class: "comments__input", type: "text", placeholder: "Напишите ответ..."}, null),
@@ -497,10 +513,10 @@ function initApp() {
 
   function appendNewComment(comment, commentsForm) {
     const [commentsBody] = commentsForm.getElementsByClassName("comments__body"),
-	  comments = Array.from(commentsBody.getElementsByClassName("comment")),
-	  commentDate = getDate(comment.timestamp).replace(",", ""),
-	  newComment = crtNewCommentNode(commentDate, comment.message),
-	  nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
+		comments = Array.from(commentsBody.getElementsByClassName("comment")),
+		commentDate = getDate(comment.timestamp).replace(",", ""),
+		newComment = crtNewCommentNode(commentDate, comment.message),
+		nextComment = comments.find(curComment => Number(curComment.dataset.timestamp) > comment.timestamp);
 
     newComment.dataset.timestamp = comment.timestamp;
     commentsBody.insertBefore(newComment, nextComment ? nextComment : comments[comments.length - 1]);
@@ -548,10 +564,10 @@ function initApp() {
     if (event.target.classList.contains("comments__submit")) {
       event.preventDefault();
       const crntCommentsForm = event.target.parentElement.parentElement,
-	    [loader] = crntCommentsForm.getElementsByClassName("loader"),
-	    [input] = crntCommentsForm.getElementsByClassName("comments__input"),
-	    left = parseInt(crntCommentsForm.style.left),
-	    top = parseInt(crntCommentsForm.style.top);
+			[loader] = crntCommentsForm.getElementsByClassName("loader"),
+			[input] = crntCommentsForm.getElementsByClassName("comments__input"),
+			left = parseInt(crntCommentsForm.style.left),
+			top = parseInt(crntCommentsForm.style.top);
 
       showElement(loader);
       postComment(input.value ? input.value : "\n", left, top);
@@ -598,7 +614,7 @@ function initApp() {
       const prevCommentsFormCheckbox = picture.querySelector('.comments__marker-checkbox[disabled=""]');
       toggleDisplayCommentsForm(prevCommentsFormCheckbox, false);
 
-      const newCommentsForm = crtNewCommentsForm(event.pageX - clickPointShifts.left, event.pageY - clickPointShifts.top);
+      const newCommentsForm = crtNewCommentsForm(event.offsetX - clickPointShifts.left, event.offsetY - clickPointShifts.top);
       picture.appendChild(newCommentsForm);
       newCommentsForm.getElementsByClassName("comments__marker-checkbox")[0].checked = true;
       newCommentsForm.getElementsByClassName("comments__marker-checkbox")[0].disabled = true;
@@ -637,9 +653,9 @@ function initApp() {
     canvasCtx.lineWidth = penWidth;
 
     let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
-	strokes = [],
-	isDrawing = false,
-	needsRendering = false;
+				strokes = [],
+				isDrawing = false,
+				needsRendering = false;
 
     const changeColor = event => {
       if (event.target.checked) {
@@ -741,9 +757,6 @@ function initApp() {
 
   //Копирование ссылки в режиме "Поделиться":
   shareTools.addEventListener("click", copyURL);
-  app.addEventListener("click", event => {
-    if (event.target !== urlTextarea) { urlTextarea.blur(); }
-  });
 
   //Переключатели отображаения комментариев на странице:
   commentsTools.addEventListener("change", toggleCommentsShow);
@@ -784,13 +797,13 @@ function initApp() {
           }
 		      
           if (wssResponse.pic.comments) {
-            renderComments(wssResponse.pic);
+            //renderComments(wssResponse.pic);
           };
         break;
 
         case "comment":
           const imageSettings = getSessionSettings("imageSettings"),
-            	commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
+								commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
 
           if (imageSettings.comments) {
             addCommentInDirectory(wssResponse.comment, imageSettings.comments);
