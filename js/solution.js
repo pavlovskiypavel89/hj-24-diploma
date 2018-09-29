@@ -32,22 +32,6 @@ function initApp() {
     return pointShifts;
   })();
 
-  const picture = (() => {
-    const picture = document.createElement("div"),
-	  canvas = document.createElement("canvas");
-
-    picture.id = "picture";
-    picture.classList.add("current-image");
-    picture.appendChild(image);
-
-    canvas.classList.add("current-image");
-    picture.insertBefore(canvas, image.nextElementSibling);
-    hideElement(canvas);
-
-    app.insertBefore(picture, menu.nextElementSibling);
-    return picture;
-  })();
-
   const apiURL = "//neto-api.herokuapp.com/pic";
 
   let socket,
@@ -299,6 +283,22 @@ function initApp() {
       selectMenuModeTo("initial");
     }
   };
+	
+  const picture = (() => {
+    const picture = document.createElement("div"),
+	  canvas = document.createElement("canvas");
+
+    picture.id = "picture";
+    picture.classList.add("current-image");
+    picture.appendChild(image);
+
+    canvas.classList.add("current-image");
+    picture.insertBefore(canvas, image.nextElementSibling);
+    hideElement(canvas);
+
+    app.insertBefore(picture, menu.nextElementSibling);
+    return picture;
+  })();
 
   renderApp();
 
