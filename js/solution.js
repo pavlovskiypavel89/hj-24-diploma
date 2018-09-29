@@ -274,6 +274,10 @@ function initApp() {
         isLinkedFromShare = true;
         loadImage({ id: urlParamID });
       } else {
+	if (menuSettings) {
+      	  menu.style.left = menuSettings.left + "px";
+      	  menu.style.top = menuSettings.top + "px";
+      	}
         delete sessionStorage.imageSettings;
         delete sessionStorage.menuSettings;
         menuSettings = null;
