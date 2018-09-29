@@ -281,7 +281,6 @@ function initApp() {
     window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
 
     initWSSConnection(imgData.id);
-    if (!isLinkedFromShare) { renderComments(imgData); }
 	  
     image.addEventListener("load", () => {
       hideElement(preloader);
@@ -372,7 +371,11 @@ function initApp() {
       urlTextarea.removeAttribute("value");
       urlTextarea.value = imageSettings.path;
 
-      initWSSConnection(imageSettings.id);
+      try {
+        initWSSConnection(imgData.id);
+      } catch(err) {
+        renderComments(imgData); 	
+      }
 
       image.addEventListener("load", () => {
       	picture.style.width = image.width + 'px';
