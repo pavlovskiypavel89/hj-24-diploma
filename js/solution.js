@@ -833,6 +833,7 @@ function initApp() {
         break;
 
         case "mask":
+           console.log(wssResponse.url);
            canvas.style.background = `url(${wssResponse.url})`;
         break;
       }
