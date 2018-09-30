@@ -798,7 +798,7 @@ function initApp() {
 
     const updatePic = event => {
       const wssResponse = JSON.parse(event.data);
-
+     console.log(wssResponse.event);
       switch (wssResponse.event) {
         case "pic":
           if (wssResponse.pic.mask) {
