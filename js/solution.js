@@ -339,7 +339,7 @@ function initApp() {
 
 	/********************** Отрисовка запуска приложения *************************/
 
-	const createPicture = (() => {
+	const picture = (() => {
     const picture = document.createElement("div"),
 	  canvas = document.createElement("canvas");
 
@@ -354,7 +354,7 @@ function initApp() {
     app.insertBefore(picture, menu.nextElementSibling);
     return picture;
   })();
-	const picture = document.getElementById("picture");
+
   const canvas = picture.querySelector("canvas.current-image");
 
   function refreshCanvas(img) {
@@ -697,7 +697,6 @@ function initApp() {
 
   const sendMask = () => {
     canvas.toBlob(blob => socket.send(blob));
-    //canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
   function initDraw(event) {
