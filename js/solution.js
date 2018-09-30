@@ -339,7 +339,7 @@ function initApp() {
 
 	/********************** Отрисовка запуска приложения *************************/
 
-	const picture = (() => {
+	const createPicture = (() => {
     const picture = document.createElement("div"),
 	  canvas = document.createElement("canvas");
 
@@ -354,7 +354,7 @@ function initApp() {
     app.insertBefore(picture, menu.nextElementSibling);
     return picture;
   })();
-
+	const picture = document.getElementById("picture");
   const canvas = picture.querySelector("canvas.current-image");
 
   function refreshCanvas(img) {
@@ -696,10 +696,8 @@ function initApp() {
   };
 
   const sendMask = () => {
-	  image.src = canvas.toDataURL();
-    canvas.toBlob(blob => {socket.send(blob); console.log(blob);});
-    canvasCtx.clearRect(0, 0, image.width, image.height);
-	  
+    canvas.toBlob(blob => socket.send(blob));
+    //canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
   function initDraw(event) {
@@ -801,11 +799,9 @@ function initApp() {
 
     const updatePic = event => {
       const wssResponse = JSON.parse(event.data);
-     
+
       switch (wssResponse.event) {
         case "pic":
-		      console.log(wssResponse.pic.mask);
-		      console.log(wssResponse.pic.comments);
           if (wssResponse.pic.mask) {
             canvas.style.background = `url(${wssResponse.pic.mask})`;
           } else {
@@ -819,7 +815,6 @@ function initApp() {
         break;
 
         case "comment":
-		      console.log(wssResponse.comment);
           const imageSettings = getSessionSettings("imageSettings"),
 		commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
 
@@ -839,7 +834,6 @@ function initApp() {
         break;
 
         case "mask":
-           console.log(wssResponse.url);
            canvas.style.background = `url(${wssResponse.url})`;
         break;
       }
