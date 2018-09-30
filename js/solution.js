@@ -39,11 +39,26 @@ function initApp() {
 
   /********************** Общие функции *************************/
 
+  function debounce(cb, delay) {
+	  let id = null;
+	  return function (...args) {
+	    const ready = () => {
+	      cb.apply(this, args);
+	      id = null;
+	    }
+	    
+	    if (id) {
+	      clearTimeout(id);
+	    }
+	    id = setTimeout(ready, delay);
+	  }
+	}
+
   function throttle(cb, isAnimation, delay) {
     let isWaiting = false;
-    return function() {
+    return function(...args) {
       if (!isWaiting) {
-        cb.apply(this, arguments);
+        cb.apply(this, args);
         isWaiting = true;
         if (isAnimation) {
           requestAnimationFrame(() => (isWaiting = false));
@@ -339,7 +354,7 @@ function initApp() {
 
 	/********************** Отрисовка запуска приложения *************************/
 
-	const picture = (() => {
+	const createPicture = (() => {
     const picture = document.createElement("div"),
 	  canvas = document.createElement("canvas");
 
@@ -354,7 +369,7 @@ function initApp() {
     app.insertBefore(picture, menu.nextElementSibling);
     return picture;
   })();
-	
+	const picture = document.getElementById("picture");
   const canvas = picture.querySelector("canvas.current-image");
 
   function refreshCanvas(img) {
@@ -697,7 +712,7 @@ function initApp() {
 
   const sendMask = () => {
     canvas.toBlob(blob => socket.send(blob));
-    //canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+    canvasCtx.clearRect(0, 0, image.width, image.height);
   };
 
   function initDraw(event) {
@@ -731,19 +746,21 @@ function initApp() {
         needsRendering = true;
       }
     });
+    
+    const debouncedSendMask = debounce(sendMask, 1000);
 
     canvas.addEventListener("mousemove", event => {
       if (isDrawing) {
         const stroke = strokes[0];
         stroke.push(makePoint(event.offsetX, event.offsetY));
         needsRendering = true;
+        debouncedSendMask();
       }
     });
 
     canvas.addEventListener("mouseup", () => {
       if (drawBtn.dataset.state === "selected") {
         isDrawing = false;
-        throttle(sendMask, false, 1000)();
         strokes = [];
       }
     });
@@ -803,6 +820,8 @@ function initApp() {
       switch (wssResponse.event) {
         case "pic":
           if (wssResponse.pic.mask) {
+          	console.log(wssResponse.pic.mask)
+          	console.log(canvas)
             canvas.style.background = `url(${wssResponse.pic.mask})`;
           } else {
             canvas.style.background = "";
