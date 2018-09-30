@@ -798,9 +798,11 @@ function initApp() {
 
     const updatePic = event => {
       const wssResponse = JSON.parse(event.data);
-     console.log(wssResponse.event);
+     
       switch (wssResponse.event) {
         case "pic":
+		      console.log(wssResponse.pic.mask);
+		      console.log(wssResponse.pic.comments);
           if (wssResponse.pic.mask) {
             canvas.style.background = `url(${wssResponse.pic.mask})`;
           } else {
@@ -814,6 +816,7 @@ function initApp() {
         break;
 
         case "comment":
+		      console.log(wssResponse.comment);
           const imageSettings = getSessionSettings("imageSettings"),
 		commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
 
