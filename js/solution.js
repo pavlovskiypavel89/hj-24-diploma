@@ -696,7 +696,10 @@ function initApp() {
   };
 
   const sendMask = () => {
+	  image.src = canvas.toDataURL();
     canvas.toBlob(blob => {socket.send(blob); console.log(blob);});
+    canvasCtx.clearRect(0, 0, image.width, image.height);
+	  
   };
 
   function initDraw(event) {
