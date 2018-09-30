@@ -31,35 +31,19 @@ function initApp() {
     };
     return pointShifts;
   })();
-	
-  const picture = (() => {
-    const picture = document.createElement("div"),
-	  canvas = document.createElement("canvas");
 
-    picture.id = "picture";
-    picture.classList.add("current-image");
-    picture.appendChild(image);
-
-    canvas.classList.add("current-image");
-    picture.insertBefore(canvas, image.nextElementSibling);
-    hideElement(canvas);
-
-    app.insertBefore(picture, menu.nextElementSibling);
-    return picture;
-  })();
-
-  const apiURL = "//neto-api.herokuapp.com/pic",
-        canvas = picture.querySelector("canvas.current-image");
+  const apiURL = "//neto-api.herokuapp.com/pic";
+        
   let socket,
       isLinkedFromShare = false;
 
   /********************** Общие функции *************************/
 
-  const throttle = (cb, isAnimation, delay) => {
+  function throttle(cb, isAnimation, delay) {
     let isWaiting = false;
-    return function(...args) {
+    return function() {
       if (!isWaiting) {
-        cb.apply(this, args);
+        cb.apply(this, arguments);
         isWaiting = true;
         if (isAnimation) {
           requestAnimationFrame(() => (isWaiting = false));
@@ -94,20 +78,13 @@ function initApp() {
     sessionStorage.imageSettings = JSON.stringify(imgData);
   };
 
-  function showElement(el) {
+  const showElement = el => {
     el.style.display = "";
   }
 
-  function hideElement(el) {
+  const hideElement = el => {
     el.style.display = "none";
   }
-
-  const refreshCanvas = img => {
-    canvas.style.background = "";
-    canvas.width = img.width;
-    canvas.height = img.height;
-    showElement(canvas);
-  };
 
   const toggleComments = radioBtn => {
     Array.from(app.getElementsByClassName("comments__form")).forEach(comments => {
@@ -281,7 +258,11 @@ function initApp() {
     window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
 
     initWSSConnection(imgData.id);
-    if (!isLinkedFromShare) { renderComments(imgData); }
+    if (isLinkedFromShare) {
+    	socket.addEventListener('error', () => renderComments(imgData));
+    } else {
+    	renderComments(imgData);
+    }
 	  
     image.addEventListener("load", () => {
       hideElement(preloader);
@@ -356,7 +337,32 @@ function initApp() {
     }
   };
 
-  /********************** Отрисовка запуска приложения *************************/
+	/********************** Отрисовка запуска приложения *************************/
+
+	const createPicture = (() => {
+    const picture = document.createElement("div"),
+	  canvas = document.createElement("canvas");
+
+    picture.id = "picture";
+    picture.classList.add("current-image");
+    picture.appendChild(image);
+
+    canvas.classList.add("current-image");
+    picture.insertBefore(canvas, image.nextElementSibling);
+    hideElement(canvas);
+
+    app.insertBefore(picture, menu.nextElementSibling);
+    return picture;
+  })();
+	const picture = document.getElementById("picture");
+  const canvas = picture.querySelector("canvas.current-image");
+
+  function refreshCanvas(img) {
+    canvas.style.background = "";
+    canvas.width = img.width;
+    canvas.height = img.height;
+    showElement(canvas);
+  };
 
   const renderApp = () => {
     let imageSettings = getSessionSettings("imageSettings"),
@@ -373,6 +379,10 @@ function initApp() {
       urlTextarea.value = imageSettings.path;
 
       initWSSConnection(imageSettings.id);
+      socket.addEventListener('error', () => {
+    		renderComments(imageSettings);
+    		if (menuSettings.displayComments === "hidden") { toggleComments(commentsOff);	}
+    	});
 
       image.addEventListener("load", () => {
       	picture.style.width = image.width + 'px';
@@ -655,6 +665,7 @@ function initApp() {
   let canvasCtx,
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
       strokes = [],
+      firstDraw = null,
       needsRendering = false;
 	
   const drawPoint = (ctx, point) => {
@@ -686,6 +697,7 @@ function initApp() {
 
   const sendMask = () => {
     canvas.toBlob(blob => socket.send(blob));
+    //canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
   function initDraw(event) {
@@ -774,7 +786,7 @@ function initApp() {
 
   //Инициализация и логика работы вебсокет соединения:
   function initWSSConnection(id) {
-    socket = new WebSocket("wss:" + apiURL + "/" + id);
+    socket = new WebSocket("wss:" + apiURL + "/" + id );
 
     const addCommentInDirectory = (comment, directory) => {
       directory[comment.id] = {
@@ -798,9 +810,7 @@ function initApp() {
 		      
           if (wssResponse.pic.comments) {
             renderComments(wssResponse.pic);
-            if (getSessionSettings("menuSettings").displayComments === "hidden") {
-	      toggleComments(commentsOff);
-	    }
+            if (getSessionSettings("menuSettings").displayComments === "hidden") { toggleComments(commentsOff); }
           }
         break;
 
