@@ -820,8 +820,7 @@ function initApp() {
       switch (wssResponse.event) {
         case "pic":
           if (wssResponse.pic.mask) {
-          	console.log(wssResponse.pic.mask)
-          	console.log(canvas)
+            console.log(wssResponse.pic.mask);
             canvas.style.background = `url(${wssResponse.pic.mask})`;
           } else {
             canvas.style.background = "";
@@ -853,6 +852,7 @@ function initApp() {
         break;
 
         case "mask":
+	   console.log(wssResponse.url);
            canvas.style.background = `url(${wssResponse.url})`;
         break;
       }
