@@ -762,6 +762,7 @@ function initApp() {
       if (drawBtn.dataset.state === "selected") {
         isDrawing = false;
         strokes = [];
+	console.log('mouseup done')
 	setTimeout(sendMask, 1000); 
       }
     });
