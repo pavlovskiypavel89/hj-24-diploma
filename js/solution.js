@@ -713,29 +713,9 @@ function initApp() {
   const sendMask = () => {
     canvas.toBlob(blob => {console.log('blob');socket.send(blob);});
   };
-
-  function initDraw(event) {
-    canvasCtx = canvas.getContext("2d");
-    canvasCtx.strokeStyle = canvasCtx.fillStyle = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor;
-    canvasCtx.lineWidth = penWidth;
-
-    let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
-	isDrawing = false;
-
-    const changeColor = event => {
-      if (event.target.checked) {
-        checkedColorBtn.removeAttribute("checked");
-        checkedColorBtn = event.target;
-        event.target.setAttribute("checked", "");
-
-        canvasCtx.strokeStyle = canvasCtx.fillStyle = penColor = getComputedStyle(event.target.nextElementSibling).backgroundColor;
-        canvasCtx.globalCompositeOperation = "source-over";
-      }
-    };
-
-    drawTools.addEventListener("change", changeColor);
-
-	 function mouseMove(event) {
+	
+	
+  function mouseMove(event) {
 	 
 	 if (isDrawing) {
         const stroke = strokes[0];
@@ -765,8 +745,29 @@ function initApp() {
 	console.log('mouseup done')
 	setTimeout(sendMask, 1000); 
    }
-   }
-	  
+   }	
+
+  function initDraw(event) {
+    canvasCtx = canvas.getContext("2d");
+    canvasCtx.strokeStyle = canvasCtx.fillStyle = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor;
+    canvasCtx.lineWidth = penWidth;
+
+    let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
+	isDrawing = false;
+
+    const changeColor = event => {
+      if (event.target.checked) {
+        checkedColorBtn.removeAttribute("checked");
+        checkedColorBtn = event.target;
+        event.target.setAttribute("checked", "");
+
+        canvasCtx.strokeStyle = canvasCtx.fillStyle = penColor = getComputedStyle(event.target.nextElementSibling).backgroundColor;
+        canvasCtx.globalCompositeOperation = "source-over";
+      }
+    };
+
+    drawTools.addEventListener("change", changeColor);
+
 	  canvas.removeEventListener("mousedown", mouseDown);
 	  canvas.removeEventListener("mousemove", mouseMove);
           canvas.removeEventListener("mouseup", mouseUp);
