@@ -39,7 +39,7 @@ function initApp() {
 
   /********************** Общие функции *************************/
 
-  function debounce(cb, delay) {
+  /*function debounce(cb, delay) {
 	  let id = null;
 	  return function (...args) {
 	    const ready = () => {
@@ -52,7 +52,7 @@ function initApp() {
 	    }
 	    id = setTimeout(ready, delay);
 	  }
-	}
+	}*/
 
   function throttle(cb, isAnimation, delay) {
     let isWaiting = false;
@@ -735,7 +735,7 @@ function initApp() {
 
     drawTools.addEventListener("change", changeColor);
 
-    const debounceSendMask = debounce(sendMask, 1000);  
+    //const debounceSendMask = debounce(sendMask, 1000);  
 	  
     canvas.addEventListener("mousedown", event => {
       if (drawBtn.dataset.state === "selected") {
@@ -745,7 +745,7 @@ function initApp() {
         stroke.push(makePoint(event.offsetX, event.offsetY));
         strokes.push(stroke);
         needsRendering = true;
-	debounceSendMask();
+	//debounceSendMask();
       }
     });
 
@@ -754,7 +754,7 @@ function initApp() {
         const stroke = strokes[0];
         stroke.push(makePoint(event.offsetX, event.offsetY));
         needsRendering = true;
-        debounceSendMask();
+        //debounceSendMask();
       }
     });
 
@@ -762,6 +762,7 @@ function initApp() {
       if (drawBtn.dataset.state === "selected") {
         isDrawing = false;
         strokes = [];
+	setTimeout(sendMask, 1000); 
       }
     });
 
