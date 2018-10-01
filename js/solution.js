@@ -674,13 +674,15 @@ function initApp() {
   };
 
   /********************** Рисование в канвас *************************/
-
+	
   const penWidth = 4;
 
   let canvasCtx,
       checkedColorBtn = menu.querySelector('.menu__color[checked=""]'),
+      penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
       strokes = [],
       firstDraw = null,
+      isDrawing = false,
       needsRendering = false;
 	
   const drawPoint = (ctx, point) => {
@@ -746,8 +748,7 @@ function initApp() {
 	setTimeout(sendMask, 1000); 
    }
    }	
-let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
-	isDrawing = false;
+
 	
   function initDraw(event) {
     canvasCtx = canvas.getContext("2d");
