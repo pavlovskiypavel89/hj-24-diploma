@@ -735,10 +735,19 @@ function initApp() {
 
     drawTools.addEventListener("change", changeColor);
 
-    //const debounceSendMask = debounce(sendMask, 1000);  
+	 function mouseMove(event) {
+	 
+	 if (isDrawing) {
+        const stroke = strokes[0];
+        stroke.push(makePoint(event.offsetX, event.offsetY));
+        needsRendering = true;
+        //debounceSendMask();
+	 }
+	 }
 	  
-    canvas.addEventListener("mousedown", event => {
-      if (drawBtn.dataset.state === "selected") {
+         function mouseDown(event) {
+	 
+	 if (drawBtn.dataset.state === "selected") {
         isDrawing = true;
         
 	const stroke = [];
@@ -746,28 +755,28 @@ function initApp() {
         strokes.push(stroke);
         needsRendering = true;
 	//debounceSendMask();
-      }
-    });
-
-    canvas.addEventListener("mousemove", event => {
-      if (isDrawing) {
-        const stroke = strokes[0];
-        stroke.push(makePoint(event.offsetX, event.offsetY));
-        needsRendering = true;
-        //debounceSendMask();
-      }
-    });
-
-    canvas.addEventListener("mouseup", () => {
-      if (drawBtn.dataset.state === "selected") {
+	 }
+	 }
+		 
+   function mouseUp(event) {
+   if (drawBtn.dataset.state === "selected") {
         isDrawing = false;
         strokes = [];
 	console.log('mouseup done')
 	setTimeout(sendMask, 1000); 
-      }
-    });
+   }
+   }
+	  
+	  canvas.removeEventListener("mousedown", mouseDown);
+	  canvas.removeEventListener("mousemove", mouseMove);
+          canvas.removeEventListener("mouseup", mouseUp);
+    canvas.addEventListener("mousedown", mouseDown);
 
-    canvas.addEventListener("mouseleave", () => (isDrawing = false));
+    canvas.addEventListener("mousemove", mouseMove);
+
+    canvas.addEventListener("mouseup", mouseUp);
+
+    //canvas.addEventListener("mouseleave", () => (isDrawing = false));
   }
 
   /********************** Обработчики событий *************************/
