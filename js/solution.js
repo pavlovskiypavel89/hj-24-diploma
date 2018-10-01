@@ -743,6 +743,7 @@ function initApp() {
           isDrawing = false;
           strokes = [];
           console.log('mouseup done')
+	  image.src = canvas.toDataURL();     
           setTimeout(sendMask, 1000); 
        }
      }	
