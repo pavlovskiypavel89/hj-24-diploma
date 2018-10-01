@@ -746,14 +746,15 @@ function initApp() {
 	setTimeout(sendMask, 1000); 
    }
    }	
-
+let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
+	isDrawing = false;
+	
   function initDraw(event) {
     canvasCtx = canvas.getContext("2d");
     canvasCtx.strokeStyle = canvasCtx.fillStyle = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor;
     canvasCtx.lineWidth = penWidth;
 
-    let penColor = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor,
-	isDrawing = false;
+    
 
     const changeColor = event => {
       if (event.target.checked) {
