@@ -373,7 +373,7 @@ function initApp() {
   const canvas = picture.querySelector("canvas.current-image");
 
   function refreshCanvas(img) {
-    canvas.style.background = "";
+    //canvas.style.background = "";
     canvas.width = img.width;
     canvas.height = img.height;
     showElement(canvas);
