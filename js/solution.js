@@ -712,7 +712,6 @@ function initApp() {
 
   const sendMask = () => {
     canvas.toBlob(blob => socket.send(blob));
-    canvasCtx.clearRect(0, 0, image.width, image.height);
   };
 
   function initDraw(event) {
@@ -855,6 +854,7 @@ function initApp() {
         case "mask":
 	   console.log(wssResponse.url);
            canvas.style.background = `url(${wssResponse.url})`;
+	   canvas.getContext('2d').clearRect(0, 0, image.width, image.height);	      
         break;
       }
     };
