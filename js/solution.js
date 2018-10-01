@@ -736,6 +736,8 @@ function initApp() {
 
     drawTools.addEventListener("change", changeColor);
 
+    const debouncedSendMask = debounce(sendMask, 1000);  
+	  
     canvas.addEventListener("mousedown", event => {
       if (drawBtn.dataset.state === "selected") {
         isDrawing = true;
@@ -744,10 +746,9 @@ function initApp() {
         stroke.push(makePoint(event.offsetX, event.offsetY));
         strokes.push(stroke);
         needsRendering = true;
+	debouncedSendMask();
       }
     });
-    
-    const debouncedSendMask = debounce(sendMask, 1000);
 
     canvas.addEventListener("mousemove", event => {
       if (isDrawing) {
