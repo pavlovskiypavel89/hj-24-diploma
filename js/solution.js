@@ -128,7 +128,7 @@ const initApp = () => {
     return element;
   };
 
-  /********************** Переключение меню *************************/
+  /********************** Переключение пунктов меню *************************/
 
   const selectMenuModeTo = (mode, selectedItemType) => {
     switch (mode) {
@@ -142,7 +142,6 @@ const initApp = () => {
         Array.from(menu.querySelectorAll('[data-state="selected"]')).forEach(
           el => (el.dataset.state = "")
         );
-        drawBtn.addEventListener("click", initDraw);
       break;
 
       case "selected":
@@ -691,9 +690,7 @@ const initApp = () => {
       delete sessionStorage.menuSettings;
       selectMenuModeTo("selected", isLinkedFromShare ? "comments" : "share");
       commentsOn.checked = true;
-      //crtPictureWrap();
-      //refreshCanvas(image);
-      
+
       //delete sessionStorage.reload;
       
       isLinkedFromShare = false;
@@ -773,11 +770,10 @@ const initApp = () => {
     canvas.style.background = 'url(" ")'; 
     canvas.classList.add("current-image", "mask-canvas");
     
-    //hideElement(canvas);
     console.log(canvas, image);
 
     picture.appendChild(image);
- 		picture.insertBefore(canvas, image.nextElementSibling);
+    picture.insertBefore(canvas, image.nextElementSibling);
     app.insertBefore(picture, menu.nextElementSibling);
   });
 
@@ -791,7 +787,6 @@ const initApp = () => {
     image.src = "";
     if (imageSettings && urlParamID) {
     	console.log('renderApp est id i imgset')
-      //hideElement(picture);
       image.dataset.status = "load";
       image.src = imageSettings.url;
 
@@ -803,14 +798,6 @@ const initApp = () => {
     		renderComments(imageSettings);
     		if (menuSettings.displayComments === "hidden") { toggleComments(commentsOff);	}
       });
-
-      //image.addEventListener("load", () => {
-      	//crtPictureWrap();
-      	//picture.style.width = image.width + 'px';
-        //picture.style.height = image.height + 'px';
-        //showElement(picture);
-      	//refreshCanvas(image);
-      //});
     } else {
       if (urlParamID) {
       	console.log('renderApp est id ')
