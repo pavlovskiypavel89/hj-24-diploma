@@ -714,48 +714,43 @@ function initApp() {
 
   const sendMask = () => {
     canvas.toBlob(blob => {console.log('blob');socket.send(blob);});
-  };
-	
+  };	
 	
   function mouseMove(event) {
-	 
-	 if (isDrawing) {
-        const stroke = strokes[0];
-        stroke.push(makePoint(event.offsetX, event.offsetY));
-        needsRendering = true;
-        //debounceSendMask();
-	 }
-	 }
+    if (isDrawing) {
+      const stroke = strokes[0];
+      stroke.push(makePoint(event.offsetX, event.offsetY));
+      needsRendering = true;
+      //debounceSendMask();
+    }
+   }
 	  
-         function mouseDown(event) {
-	 
-	 if (drawBtn.dataset.state === "selected") {
+   function mouseDown(event) {
+
+     if (drawBtn.dataset.state === "selected") {
         isDrawing = true;
-        
-	const stroke = [];
+
+        const stroke = [];
         stroke.push(makePoint(event.offsetX, event.offsetY));
         strokes.push(stroke);
         needsRendering = true;
-	//debounceSendMask();
-	 }
-	 }
-		 
-   function mouseUp(event) {
-   if (drawBtn.dataset.state === "selected") {
-        isDrawing = false;
-        strokes = [];
-	console.log('mouseup done')
-	setTimeout(sendMask, 1000); 
+        //debounceSendMask();
+     }
    }
-   }	
-
+		 
+    function mouseUp(event) {
+       if (drawBtn.dataset.state === "selected") {
+          isDrawing = false;
+          strokes = [];
+          console.log('mouseup done')
+          setTimeout(sendMask, 1000); 
+       }
+     }	
 	
   function initDraw(event) {
     canvasCtx = canvas.getContext("2d");
     canvasCtx.strokeStyle = canvasCtx.fillStyle = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor;
     canvasCtx.lineWidth = penWidth;
-
-    
 
     const changeColor = event => {
       if (event.target.checked) {
@@ -769,16 +764,12 @@ function initApp() {
     };
 
     drawTools.addEventListener("change", changeColor);
-
-	  canvas.removeEventListener("mousedown", mouseDown);
-	  canvas.removeEventListener("mousemove", mouseMove);
-          canvas.removeEventListener("mouseup", mouseUp);
+    canvas.removeEventListener("mousedown", mouseDown);
+    canvas.removeEventListener("mousemove", mouseMove);
+    canvas.removeEventListener("mouseup", mouseUp);
     canvas.addEventListener("mousedown", mouseDown);
-
     canvas.addEventListener("mousemove", mouseMove);
-
     canvas.addEventListener("mouseup", mouseUp);
-
     //canvas.addEventListener("mouseleave", () => (isDrawing = false));
   }
 
