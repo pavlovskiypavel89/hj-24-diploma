@@ -395,9 +395,9 @@ function initApp() {
 
       initWSSConnection(imageSettings.id);
       socket.addEventListener('error', () => {
-    		renderComments(imageSettings);
-    		if (menuSettings.displayComments === "hidden") { toggleComments(commentsOff);	}
-    	});
+    	renderComments(imageSettings);
+    	if (menuSettings.displayComments === "hidden") { toggleComments(commentsOff);	}
+      });
 
       image.addEventListener("load", () => {
       	picture.style.width = image.width + 'px';
@@ -735,7 +735,7 @@ function initApp() {
 
     drawTools.addEventListener("change", changeColor);
 
-    const debouncedSendMask = debounce(sendMask, 1000);  
+    const debounceSendMask = debounce(sendMask, 1000);  
 	  
     canvas.addEventListener("mousedown", event => {
       if (drawBtn.dataset.state === "selected") {
@@ -745,7 +745,7 @@ function initApp() {
         stroke.push(makePoint(event.offsetX, event.offsetY));
         strokes.push(stroke);
         needsRendering = true;
-	debouncedSendMask();
+	debounceSendMask();
       }
     });
 
@@ -754,7 +754,7 @@ function initApp() {
         const stroke = strokes[0];
         stroke.push(makePoint(event.offsetX, event.offsetY));
         needsRendering = true;
-        debouncedSendMask();
+        debounceSendMask();
       }
     });
 
