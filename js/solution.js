@@ -23,6 +23,25 @@ function initApp() {
 	defaultCommentsForm = app.removeChild(app.getElementsByClassName("comments__form")[0]);
   
   const defaultMenuHeight = menu.offsetHeight;
+	
+  const createPicture = (() => {
+     const picture = document.createElement("div"),
+	   canvas = document.createElement("canvas");
+
+     picture.id = "picture";
+     picture.classList.add("current-image");
+     picture.appendChild(image);
+
+     canvas.classList.add("current-image");
+     picture.insertBefore(canvas, image.nextElementSibling);
+     hideElement(canvas);
+
+     app.insertBefore(picture, menu.nextElementSibling);
+     return picture;
+  })();
+	
+  const picture = document.getElementById("picture");
+  const canvas = picture.querySelector("canvas.current-image");
 
   const clickPointShifts = (() => {
     const pointShifts = {
@@ -38,22 +57,7 @@ function initApp() {
       isLinkedFromShare = false;
 
   /********************** Общие функции *************************/
-
-  /*function debounce(cb, delay) {
-	  let id = null;
-	  return function (...args) {
-	    const ready = () => {
-	      cb.apply(this, args);
-	      id = null;
-	    }
-	    
-	    if (id) {
-	      clearTimeout(id);
-	    }
-	    id = setTimeout(ready, delay);
-	  }
-	}*/
-
+	
   function throttle(cb, isAnimation, delay) {
     let isWaiting = false;
     return function(...args) {
@@ -93,11 +97,11 @@ function initApp() {
     sessionStorage.imageSettings = JSON.stringify(imgData);
   };
 
-  const showElement = el => {
+  function showElement (el) {
     el.style.display = "";
   }
 
-  const hideElement = el => {
+  function hideElement (el) {
     el.style.display = "none";
   }
 
@@ -110,6 +114,14 @@ function initApp() {
         }
       }
     );
+  };
+	
+  function refreshCanvas(img) {
+	  console.log(canvas, img);
+    //canvas.style.background = "";
+    canvas.width = img.width;
+    canvas.height = img.height;
+    showElement(canvas);
   };
 
   const getDate = timestamp => {
@@ -351,34 +363,9 @@ function initApp() {
       }
     }
   };
-
-	/********************** Отрисовка запуска приложения *************************/
-
-	const createPicture = (() => {
-    const picture = document.createElement("div"),
-	  canvas = document.createElement("canvas");
-
-    picture.id = "picture";
-    picture.classList.add("current-image");
-    picture.appendChild(image);
-
-    canvas.classList.add("current-image");
-    picture.insertBefore(canvas, image.nextElementSibling);
-    hideElement(canvas);
-
-    app.insertBefore(picture, menu.nextElementSibling);
-    return picture;
-  })();
-	const picture = document.getElementById("picture");
-  const canvas = picture.querySelector("canvas.current-image");
-
-  function refreshCanvas(img) {
-    //canvas.style.background = "";
-    canvas.width = img.width;
-    canvas.height = img.height;
-    showElement(canvas);
-  };
-
+  
+  /********************** Отрисовка запуска приложения *************************/
+	
   const renderApp = () => {
     let imageSettings = getSessionSettings("imageSettings"),
 	 menuSettings = getSessionSettings("menuSettings"),
