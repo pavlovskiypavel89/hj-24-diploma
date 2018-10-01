@@ -711,7 +711,7 @@ function initApp() {
   };
 
   const sendMask = () => {
-    canvas.toBlob(blob => socket.send(blob));
+    canvas.toBlob(blob => {console.log('blob');socket.send(blob);});
   };
 
   function initDraw(event) {
