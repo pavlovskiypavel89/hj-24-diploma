@@ -1,7 +1,7 @@
 "use strict";
 const initApp = () => {
   const [app] = document.getElementsByClassName("app");
-  const	[menu] = app.getElementsByClassName("menu");
+  const [menu] = app.getElementsByClassName("menu");
   const [burgerBtn] = menu.getElementsByClassName("burger");
   const [newImgBtn] = menu.getElementsByClassName("new");
   const [commentsBtn] = menu.getElementsByClassName("comments");
@@ -20,7 +20,7 @@ const initApp = () => {
   const [errorText] = errorMsg.getElementsByClassName("error__message");
    
   const picture = document.createElement("div");
-  const	canvas = document.createElement("canvas");
+  const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
   const markerBounds = app.getElementsByClassName("comments__marker")[0].getBoundingClientRect();
@@ -440,7 +440,7 @@ const initApp = () => {
 
   const postComment = (message, left, top) => {
     const id = getSessionSettings("imageSettings").id;
-    const body = `message=${encodeURIComponent(message)}"&left="${encodeURIComponent(left)}"&top="${encodeURIComponent(top)}`;
+    const body = `message=${encodeURIComponent(message)}&left=${encodeURIComponent(left)}&top=${encodeURIComponent(top)}`;
 
     return fetch(`https:${apiURL}/${id}/comments`, {
       body: body,
