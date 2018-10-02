@@ -62,8 +62,8 @@ const renderApp = () => {
         image.addEventListener("load", initDraw);
       }
     } else {
-        delete sessionStorage.imageSettings;
-        selectMenuModeTo("initial");
+      delete sessionStorage.imageSettings;
+      selectMenuModeTo("initial");
     }
 
     menu.style.left = menuSettings.left + "px";
