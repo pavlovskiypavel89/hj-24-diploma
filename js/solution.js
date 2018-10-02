@@ -728,7 +728,7 @@ const initApp = () => {
       input.type = "file";
       input.accept = "image/jpeg, image/png";
 
-      input.addEventListener("change", event => postImage("https:" + apiURL, event.currentTarget.files[0]));
+      input.addEventListener("change", event => postImage(`https:${apiURL}`, event.currentTarget.files[0]));
       input.dispatchEvent(new MouseEvent(event.type, event));
     }
   };
