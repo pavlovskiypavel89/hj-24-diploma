@@ -1,5 +1,4 @@
-﻿/**************** Инициализация и логика работы вебсокет соединения: *************/
-
+/**************** Инициализация и логика работы вебсокет соединения: *************/
 let socket;
 
 const addCommentInDirectory = (comment, directory) =>  {
@@ -29,7 +28,7 @@ const updatePic = event => {
 
     case "comment":
       const imageSettings = getSessionSettings("imageSettings");
-const commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
+      const commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResponse.comment.left}"][data-top="${wssResponse.comment.top}"]`);
 
       if (imageSettings.comments) {
         addCommentInDirectory(wssResponse.comment, imageSettings.comments);
@@ -47,20 +46,21 @@ const commentsMarker = app.querySelector(`.comments__marker[data-left="${wssResp
     break;
 
     case "mask":
-			canvas.style.background = `url("${wssResponse.url}")`; 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+	canvas.style.background = `url("${wssResponse.url}")`; 
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (!sessionStorage.wssReload) {
-			  sessionStorage.wssReload = 1;
-			  socket.close(1000, "Требуется перезапуск вебсокет соединения");
-			  initWSSConnection(getSessionSettings("imageSettings").id);
-			} 
+        if (!sessionStorage.wssReload) {
+	  sessionStorage.wssReload = 1;
+	  socket.close(1000, "Требуется перезапуск вебсокет соединения");
+	  initWSSConnection(getSessionSettings("imageSettings").id);
+	} 
     break;
   }
 };
 
 const initWSSConnection = id => {
   socket = new WebSocket(`wss:${apiURL}/${id}`);
+	
   socket.addEventListener("message", updatePic);
   socket.addEventListener("open", event => console.log("Вебсокет соединение установлено"));
   socket.addEventListener("close", event => console.log(event.wasClean ? `"Чистое закрытие" соединения` : `Обрыв связи. Причина: ${event.reason}`));
