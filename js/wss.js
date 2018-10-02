@@ -46,14 +46,14 @@ const updatePic = event => {
     break;
 
     case "mask":
-	canvas.style.background = `url("${wssResponse.url}")`; 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.background = `url("${wssResponse.url}")`;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (!sessionStorage.wssReload) {
-	  sessionStorage.wssReload = 1;
-	  socket.close(1000, "Требуется перезапуск вебсокет соединения");
-	  initWSSConnection(getSessionSettings("imageSettings").id);
-	} 
+      if (!sessionStorage.wssReload) {
+        sessionStorage.wssReload = 1;
+        socket.close(1000, "Требуется перезапуск вебсокет соединения");
+        initWSSConnection(getSessionSettings("imageSettings").id);
+      } 
     break;
   }
 };
