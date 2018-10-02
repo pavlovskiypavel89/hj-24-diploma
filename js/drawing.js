@@ -1,5 +1,4 @@
-﻿/********************** Рисование в канвас *************************/
-
+/********************** Рисование в канвас *************************/
 const penWidth = 4;
 
 let checkedColorBtn = menu.querySelector(`.menu__color[checked=""]`);
@@ -9,9 +8,9 @@ let isDrawing = false;
 let needsRendering = false;
 
 const drawPoint = point => {
-    ctx.beginPath();
-    ctx.arc(...point, penWidth / 2, 0, 2 * Math.PI);
-    ctx.fill();
+  ctx.beginPath();
+  ctx.arc(...point, penWidth / 2, 0, 2 * Math.PI);
+  ctx.fill();
 };
 
 const drawStroke = points => {
