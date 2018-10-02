@@ -44,60 +44,57 @@ image.addEventListener("load", () => {
   picture.appendChild(image);
   picture.insertBefore(canvas, image.nextElementSibling);
   app.insertBefore(picture, menu.nextElementSibling);
-});
-      
+});   
 
 /********************** Отрисовка запуска приложения *************************/
 
-const initApp = () => {
-  const renderApp = (() => {
-  	app.removeChild(app.getElementsByClassName("comments__form")[0]);
+const renderApp = () => {
+  app.removeChild(app.getElementsByClassName("comments__form")[0]);
 
-    const urlParamID = new URL(`${window.location.href}`).searchParams.get("id");  
-    const menuSettings = getSessionSettings("menuSettings");
+  const urlParamID = new URL(`${window.location.href}`).searchParams.get("id");  
+  const menuSettings = getSessionSettings("menuSettings");
 
-    if (menuSettings) {
-    	if (urlParamID) {
-      	selectMenuModeTo(menuSettings.mode, menuSettings.selectItemType);
+  if (menuSettings) {
+    if (urlParamID) {
+      selectMenuModeTo(menuSettings.mode, menuSettings.selectItemType);
 
-      	if (menuSettings.selectItemType === "draw") {
-        	image.addEventListener("load", initDraw);
-      	}
-	    } else {
-	      delete sessionStorage.imageSettings;
-	      selectMenuModeTo("initial");
-	    }
-
-      menu.style.left = menuSettings.left + "px";
-      menu.style.top = menuSettings.top + "px";
-
-      commentsOff.checked = menuSettings.displayComments === "hidden" ? true : false; 
-    } else {
-    	selectMenuModeTo("initial");
-    }
-    
-    const imageSettings = getSessionSettings("imageSettings");
-    image.src = "";
-
-    if (imageSettings && urlParamID) {
-      image.dataset.status = "load";
-      image.src = imageSettings.url;
-      urlTextarea.value = imageSettings.path;
-
-      try {
-      	initWSSConnection(imageSettings.id);
-      } catch (err) {
-      	renderComments(imageSettings);
+      if (menuSettings.selectItemType === "draw") {
+        image.addEventListener("load", initDraw);
       }
+    } else {
+        delete sessionStorage.imageSettings;
+        selectMenuModeTo("initial");
+    }
 
-    } else if (urlParamID) {
-      isLinkedFromShare = true;
-      loadImage({ id: urlParamID });
-    } 
-  })();
-}
+    menu.style.left = menuSettings.left + "px";
+    menu.style.top = menuSettings.top + "px";
 
-document.addEventListener("DOMContentLoaded", initApp);
+    commentsOff.checked = menuSettings.displayComments === "hidden" ? true : false; 
+  } else {
+    selectMenuModeTo("initial");
+  }
+
+  const imageSettings = getSessionSettings("imageSettings");
+  image.src = "";
+
+  if (imageSettings && urlParamID) {
+    image.dataset.status = "load";
+    image.src = imageSettings.url;
+    urlTextarea.value = imageSettings.path;
+
+    try {
+      initWSSConnection(imageSettings.id);
+    } catch (err) {
+      renderComments(imageSettings);
+    }
+
+  } else if (urlParamID) {
+    isLinkedFromShare = true;
+    loadImage({ id: urlParamID });
+  } 
+};
+
+document.addEventListener("DOMContentLoaded", renderApp);
 
 /*********************** Общие функции *************************/
 
@@ -143,7 +140,6 @@ const checkResponseStatus = resp => {
     throw new Error(`${resp.statusText}`);
   }
 };
-
 
 /*********************** Переключение пунктов меню *************************/
 
