@@ -67,7 +67,7 @@ const dropMenu = () => {
   }
 };
 
-const moveMenu = throttle((...coords) => dragMenu(...coords), true);
+const moveMenu = throttle((...coords) => dragMenu(...coords));
 menu.addEventListener("mousedown", putMenu);
 app.addEventListener("mousemove", event => moveMenu(event.pageX, event.pageY));
 app.addEventListener("mouseup", dropMenu);
