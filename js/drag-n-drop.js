@@ -2,7 +2,7 @@
 let dragged = null;
 let draggedSettings = null;
 
-const throttle = (cb, isAnimation, delay) => {
+const throttle = cb => {
   let isWaiting = false;
   return function(...args) {
     if (!isWaiting) {
