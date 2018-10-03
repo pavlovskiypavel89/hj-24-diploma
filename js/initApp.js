@@ -30,26 +30,26 @@ const apiURL = "//neto-api.herokuapp.com/pic";
 
 const picture = document.createElement("div");
 const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
-
-image.addEventListener("load", () => {
-  picture.style.width = image.width + "px";
-  picture.style.height = image.height + "px";
-  picture.classList.add("current-image", "picture-wrap");
-
-  canvas.width = image.width;
-  canvas.height = image.height;
-  canvas.classList.add("current-image", "mask-canvas");
-
-  picture.appendChild(image);
-  picture.insertBefore(canvas, image.nextElementSibling);
-  app.insertBefore(picture, menu.nextElementSibling);
-});   
+const ctx = canvas.getContext("2d");  
 
 /********************** Отрисовка запуска приложения *************************/
 
 const renderApp = () => {
   app.removeChild(app.getElementsByClassName("comments__form")[0]);
+ 
+  image.addEventListener("load", () => {
+   picture.style.width = image.width + "px";
+   picture.style.height = image.height + "px";
+   picture.classList.add("current-image", "picture-wrap");
+
+   canvas.width = image.width;
+   canvas.height = image.height;
+   canvas.classList.add("current-image", "mask-canvas");
+
+   picture.appendChild(image);
+   picture.insertBefore(canvas, image.nextElementSibling);
+   app.insertBefore(picture, menu.nextElementSibling);
+ }); 
 
   const urlParamID = new URL(`${window.location.href}`).searchParams.get("id");  
   const menuSettings = getSessionSettings("menuSettings");
