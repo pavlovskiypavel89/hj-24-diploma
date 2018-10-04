@@ -50,8 +50,9 @@ const updatePic = event => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (!sessionStorage.wssReload) {
+	console.log("Для корректной склейки текущего изображения требуется перезапуск вебсокет соединения");
         sessionStorage.wssReload = 1;
-        socket.close(1000, "Требуется перезапуск вебсокет соединения");
+        socket.close(1000, `Выполнено ${sessionStorage.wssReload} плановое закрытие соединения`);
         initWSSConnection(getSessionSettings("imageSettings").id);
       } 
     break;
