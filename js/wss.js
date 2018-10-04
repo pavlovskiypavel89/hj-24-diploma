@@ -22,6 +22,7 @@ const updatePic = event => {
       }
       
       if (wssResponse.pic.comments) {
+	      console.log('wss');
         renderComments(wssResponse.pic);
       }
     break;
