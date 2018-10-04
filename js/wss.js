@@ -64,7 +64,7 @@ const initWSSConnection = id => {
 	
   socket.addEventListener("message", updatePic);
   socket.addEventListener("open", event => console.log("Вебсокет соединение установлено"));
-  socket.addEventListener("close", event => console.log(event);
+  socket.addEventListener("close", event => console.log(event));
   window.addEventListener("beforeunload", () => socket.close(1000, "Сессия успешно завершена"));
   socket.addEventListener("error", error => console.error(`Ошибка: ${error.message}`));
 };
