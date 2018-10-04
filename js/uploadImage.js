@@ -8,6 +8,7 @@ const postError = (header, message) => {
 };
 
 const showImage = imgData => {
+  console.log(imgData);
   image.dataset.status = "load";
   image.src = imgData.url;
   saveImageSettings(imgData);
