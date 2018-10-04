@@ -13,15 +13,14 @@ const showImage = imgData => {
   saveImageSettings(imgData);
   window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
   
+  initWSSConnection(imgData.id);
+  console.log('upload');
+  console.log(picture.children);
+  renderComments(imgData); 
+  
   image.addEventListener("load", () => {
-    initWSSConnection(imgData.id);
-    console.log('upload');
-    console.log(picture.children);
-    renderComments(imgData); 
-    
     hideElement(preloader);
     
-
     const menuSettings = getSessionSettings("menuSettings");
     delete menuSettings.displayComments;
     sessionStorage.menuSettings = JSON.stringify(menuSettings);
