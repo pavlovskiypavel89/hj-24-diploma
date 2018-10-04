@@ -15,6 +15,7 @@ const showImage = imgData => {
 
   initWSSConnection(imgData.id);
   console.log('upload');
+  console.log(picture.children);
   renderComments(imgData); 
   
   image.addEventListener("load", () => {
