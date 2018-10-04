@@ -35,7 +35,6 @@ const ctx = canvas.getContext("2d");
 /********************** Отрисовка запуска приложения *************************/
 
 const renderApp = () => {
-  console.log('renderapp')
   app.removeChild(app.getElementsByClassName("comments__form")[0]);
  
   image.addEventListener("load", () => {
@@ -50,7 +49,6 @@ const renderApp = () => {
    picture.appendChild(image);
    picture.insertBefore(canvas, image.nextElementSibling);
    app.insertBefore(picture, menu.nextElementSibling);
-   console.log('imgload');
  }); 
 
   const urlParamID = new URL(`${window.location.href}`).searchParams.get("id");  
@@ -78,7 +76,6 @@ const renderApp = () => {
 
   const imageSettings = getSessionSettings("imageSettings");
   image.src = "";
- console.log(imageSettings);
 
   if (imageSettings && urlParamID) {
     image.dataset.status = "load";
@@ -86,7 +83,6 @@ const renderApp = () => {
     urlTextarea.value = imageSettings.path;
 
     try {
-      console.log('initwss by initApp');
       initWSSConnection(imageSettings.id);
     } catch (err) {
       renderComments(imageSettings);
