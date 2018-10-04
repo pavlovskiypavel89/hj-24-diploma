@@ -14,6 +14,7 @@ const showImage = imgData => {
   window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
 
   initWSSConnection(imgData.id);
+  console.log('upload');
   renderComments(imgData); 
   
   image.addEventListener("load", () => {
