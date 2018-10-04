@@ -91,8 +91,6 @@ const appendNewComment = (comment, commentsForm) => {
 const renderComments = imgData => {
  console.log(imgData.comments);
  if (imgData.comments) {
-   console.log(isLinkedFromShare);
-   if (!isLinkedFromShare) { return; }
    const Forms = Object.keys(imgData.comments).reduce((forms, id) => {
      const commentsMarker = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
 
