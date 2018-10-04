@@ -78,6 +78,7 @@ const renderApp = () => {
 
   const imageSettings = getSessionSettings("imageSettings");
   image.src = "";
+ console.log(imageSettings);
 
   if (imageSettings && urlParamID) {
     image.dataset.status = "load";
