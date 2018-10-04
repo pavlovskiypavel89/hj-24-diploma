@@ -64,7 +64,7 @@ const initWSSConnection = id => {
 	
   socket.addEventListener("message", updatePic);
   socket.addEventListener("open", event => console.log("Вебсокет соединение установлено"));
-  socket.addEventListener("close", event => console.log(event.wasClean ? `${sessionStorage.wssReload ? "Выполнено " + sessionStorage.wssReload + " плановое закрытие соединения" : '"Чистое закрытие" соединения'}` : `Обрыв связи. Причина: ${event.reason}`));
+  socket.addEventListener("close", event => console.log(event.wasClean ? `"Чистое закрытие" соединения` : `Обрыв связи. Причина: ${event.reason}`));
   window.addEventListener("beforeunload", () => socket.close(1000, "Сессия успешно завершена"));
   socket.addEventListener("error", error => console.error(`Ошибка: ${error.message}`));
 };
