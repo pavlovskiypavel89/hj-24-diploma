@@ -50,7 +50,7 @@ const updatePic = event => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (!sessionStorage.wssReload) {
-	console.log("Для корректной склейки текущего изображения требуется перезапуск вебсокет соединения");
+        console.log("Для корректной склейки текущего изображения требуется перезапуск вебсокет соединения");
         sessionStorage.wssReload = 1;
         socket.close(1000, `Выполнено ${sessionStorage.wssReload} плановое закрытие соединения`);
         initWSSConnection(getSessionSettings("imageSettings").id);
@@ -64,7 +64,7 @@ const initWSSConnection = id => {
 	
   socket.addEventListener("message", updatePic);
   socket.addEventListener("open", event => console.log("Вебсокет соединение установлено"));
-  socket.addEventListener("close", event => console.log(event.wasClean ? `"Чистое закрытие" соединения` : `Обрыв связи. Причина: ${event.reason}`));
+  socket.addEventListener("close", event => console.log(event.wasClean ? `${event.reason ? event.reason : '"Чистое закрытие" соединения'}` : `Обрыв связи. Причина: ${event.reason}`));
   window.addEventListener("beforeunload", () => socket.close(1000, "Сессия успешно завершена"));
   socket.addEventListener("error", error => console.error(`Ошибка: ${error.message}`));
 };
