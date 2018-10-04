@@ -65,6 +65,8 @@ const crtNewCommentsForm = (left, top) => {
 };
 
 const parseNewCommentsForm = comment => {
+ console.log(picture.firstElementChild);
+ if (!picture.firstElementChild) {return;}
  const newCommentsForm = crtNewCommentsForm(comment.left, comment.top);
  const [commentsBody] = newCommentsForm.getElementsByClassName("comments__body");
  const [loader] = newCommentsForm.getElementsByClassName("loader");
