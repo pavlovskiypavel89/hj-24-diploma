@@ -85,6 +85,7 @@ const renderApp = () => {
     urlTextarea.value = imageSettings.path;
 
     try {
+      console.log('initwss by initApp');
       initWSSConnection(imageSettings.id);
     } catch (err) {
       renderComments(imageSettings);
