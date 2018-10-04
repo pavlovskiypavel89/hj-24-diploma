@@ -22,9 +22,9 @@ const showImage = imgData => {
   image.addEventListener("load", () => {
     try {
      console.log('initwss by initApp');
-     initWSSConnection(imageSettings.id);
+     initWSSConnection(imgData.id);
     } catch (err) {
-       renderComments(imageSettings);
+       renderComments(imgData);
     }
     
     hideElement(preloader);
