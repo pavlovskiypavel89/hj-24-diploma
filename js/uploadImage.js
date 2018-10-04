@@ -13,20 +13,12 @@ const showImage = imgData => {
   saveImageSettings(imgData);
   window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
   
-  /*initWSSConnection(imgData.id);
+  initWSSConnection(imgData.id);
   console.log('upload');
   console.log(picture.children);
-  if (!isLinkedFromShare) { renderComments(imgData); }*/
-  
+  if (!isLinkedFromShare) { renderComments(imgData); }
   
   image.addEventListener("load", () => {
-    try {
-     console.log('initwss by initApp');
-     initWSSConnection(imgData.id);
-    } catch (err) {
-       renderComments(imgData);
-    }
-    
     hideElement(preloader);
     
     const menuSettings = getSessionSettings("menuSettings");
