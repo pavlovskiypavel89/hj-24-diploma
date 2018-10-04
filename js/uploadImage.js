@@ -16,7 +16,7 @@ const showImage = imgData => {
   initWSSConnection(imgData.id);
   console.log('upload');
   console.log(picture.children);
-  renderComments(imgData); 
+  if (!isLinkedFromShare) { renderComments(imgData); }
   
   image.addEventListener("load", () => {
     hideElement(preloader);
