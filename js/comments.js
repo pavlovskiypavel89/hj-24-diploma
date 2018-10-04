@@ -65,8 +65,8 @@ const crtNewCommentsForm = (left, top) => {
 };
 
 const parseNewCommentsForm = comment => {
- console.log(picture.firstElementChild);
  if (!picture.firstElementChild) { return document.createTextNode(""); }
+ 
  const newCommentsForm = crtNewCommentsForm(comment.left, comment.top);
  const [commentsBody] = newCommentsForm.getElementsByClassName("comments__body");
  const [loader] = newCommentsForm.getElementsByClassName("loader");
@@ -91,7 +91,6 @@ const appendNewComment = (comment, commentsForm) => {
 };
 
 const renderComments = imgData => {
- console.log(imgData.comments);
  if (imgData.comments) {
    const Forms = Object.keys(imgData.comments).reduce((forms, id) => {
      const commentsMarker = forms.querySelector(`.comments__marker[data-left="${imgData.comments[id].left}"][data-top="${imgData.comments[id].top}"]`);
