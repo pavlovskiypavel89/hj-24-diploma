@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 const [app] = document.getElementsByClassName("app");
 const [menu] = app.getElementsByClassName("menu");
 const [burgerBtn] = menu.getElementsByClassName("burger");
@@ -35,6 +35,7 @@ const ctx = canvas.getContext("2d");
 /********************** Отрисовка запуска приложения *************************/
 
 const renderApp = () => {
+  console.log('renderapp')
   app.removeChild(app.getElementsByClassName("comments__form")[0]);
  
   image.addEventListener("load", () => {
@@ -49,6 +50,7 @@ const renderApp = () => {
    picture.appendChild(image);
    picture.insertBefore(canvas, image.nextElementSibling);
    app.insertBefore(picture, menu.nextElementSibling);
+   console.log('imgload');
  }); 
 
   const urlParamID = new URL(`${window.location.href}`).searchParams.get("id");  
