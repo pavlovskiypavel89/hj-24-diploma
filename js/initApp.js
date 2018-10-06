@@ -75,11 +75,11 @@ const renderApp = () => {
   }
 
   const imageSettings = getSessionSettings("imageSettings");
-  image.src = "";
+  image.src = imageSettings.url ? imageSettings.url : "";
 
   if (imageSettings && urlParamID) {
     image.dataset.status = "load";
-    image.src = imageSettings.url;
+    //image.src = imageSettings.url;
     urlTextarea.value = imageSettings.path;
 
     try {
