@@ -47,7 +47,6 @@ const renderApp = () => {
   if (menuSettings) {
     if (urlParamID) {
       selectMenuModeTo(menuSettings.mode, menuSettings.selectItemType);
-
       if (menuSettings.selectItemType === "draw") {
         image.addEventListener("load", initDraw);
       }
