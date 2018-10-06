@@ -218,10 +218,10 @@ const postComment = (message, left, top) => {
       "Content-Type": "application/x-www-form-urlencoded"
     }
   })
-    .then(checkResponseStatus)
-    .then(data => loadComment(data, left, top))
-    .then(saveImageSettings)
-    .catch(err => console.error(err));
+  .then(checkResponseStatus)
+  .then(data => loadComment(data, left, top))
+  .then(saveImageSettings)
+  .catch(err => console.error(err));
 };
 
 const sendComment = event => {
