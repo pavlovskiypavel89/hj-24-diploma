@@ -32,9 +32,9 @@ const showImage = imgData => {
 
 const loadImage = ({ id }) => {
   fetch(`https:${apiURL}/${id}`)
-    .then(checkResponseStatus)
-    .then(showImage)
-    .catch(err => postError(errorHeader.textContent, err.message));
+  .then(checkResponseStatus)
+  .then(showImage)
+  .catch(err => postError(errorHeader.textContent, err.message));
 };
 
 const postImage = (path, file) => {
@@ -49,9 +49,9 @@ const postImage = (path, file) => {
     body: formData,
     method: "POST"
   })
-    .then(checkResponseStatus)
-    .then(showImage)
-    .catch(err => postError(errorHeader.textContent, err.message));
+  .then(checkResponseStatus)
+  .then(showImage)
+  .catch(err => postError(errorHeader.textContent, err.message));
 };
 
 const uploadNewByInput = event => {
