@@ -5,9 +5,9 @@ const tick = () => {
     needsRendering = false;
   }
 
-  let crntMenuLeftPos = menu.getBoundingClientRect().left;
+  const crntMenuLeftPos = menu.getBoundingClientRect().left;
   while (menu.offsetHeight > defaultMenuHeight) {
-    menu.style.left = --crntMenuLeftPos + "px";
+    menu.style.left = (crntMenuLeftPos - 1) + "px";
   }
 
   window.requestAnimationFrame(tick);
