@@ -70,10 +70,6 @@ const crtNewCommentsForm = (left, top) => {
 };
 
 const parseNewCommentsForm = comment => {
-  if (!picture.firstElementChild) {
-    return document.createTextNode("");
-  }
-
   const newCommentsForm = crtNewCommentsForm(comment.left, comment.top);
   const [commentsBody] = newCommentsForm.getElementsByClassName("comments__body");
   const [loader] = newCommentsForm.getElementsByClassName("loader");
@@ -113,10 +109,6 @@ const renderComments = imgData => {
     }, document.createDocumentFragment());
 
     picture.appendChild(Forms);
-  } else {
-    while (picture.hasChildNodes() && picture.lastElementChild.classList.contains("comments__form")) {
-      picture.removeChild(picture.lastElementChild);
-    }
   }
 
   if (getSessionSettings("menuSettings").displayComments === "hidden") {
