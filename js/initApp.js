@@ -88,7 +88,7 @@ const renderApp = () => {
       } catch (err) {
         renderComments(imageSettings);
       }
-    }
+    });
   } else if (urlParamID) {
     isLinkedFromShare = true;
     loadImage({ id: urlParamID });
