@@ -115,7 +115,6 @@ const renderComments = imgData => {
     toggleCommentsForm(commentsOff);
     commentsOff.checked = true;
   }
-  return imgData;
 };
 
 /********************** Работа с формой комментариев *************************/
