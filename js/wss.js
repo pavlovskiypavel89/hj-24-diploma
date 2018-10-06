@@ -22,7 +22,7 @@ const updatePic = event => {
       }
 
       if (wssResponse.pic.comments) {
-        renderComments(wssResponse.pic);
+        setTimeout(() => renderComments(wssResponse.pic), 500);
       }
     break;
 
