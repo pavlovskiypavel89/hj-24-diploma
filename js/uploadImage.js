@@ -12,18 +12,18 @@ const showImage = imgData => {
   image.src = imgData.url;
   saveImageSettings(imgData);
   window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
-  
+
   initWSSConnection(imgData.id);
   renderComments(imgData);
-  
+
   image.addEventListener("load", () => {
     hideElement(preloader);
-    
+
     const menuSettings = getSessionSettings("menuSettings");
     delete menuSettings.displayComments;
     sessionStorage.menuSettings = JSON.stringify(menuSettings);
     sessionStorage.wssReload ? delete sessionStorage.wssReload : "";
-    
+
     selectMenuModeTo("selected", isLinkedFromShare ? "comments" : "share");
     commentsOn.checked = true;
     isLinkedFromShare = false;
@@ -32,9 +32,9 @@ const showImage = imgData => {
 
 const loadImage = ({ id }) => {
   fetch(`https:${apiURL}/${id}`)
-  .then(checkResponseStatus)
-  .then(showImage)
-  .catch(err => postError(errorHeader.textContent, err.message));
+    .then(checkResponseStatus)
+    .then(showImage)
+    .catch(err => postError(errorHeader.textContent, err.message));
 };
 
 const postImage = (path, file) => {
@@ -49,9 +49,9 @@ const postImage = (path, file) => {
     body: formData,
     method: "POST"
   })
-  .then(checkResponseStatus)
-  .then(showImage)
-  .catch(err => postError(errorHeader.textContent, err.message));
+    .then(checkResponseStatus)
+    .then(showImage)
+    .catch(err => postError(errorHeader.textContent, err.message));
 };
 
 const uploadNewByInput = event => {
@@ -71,7 +71,9 @@ const uploadNewByInput = event => {
 
 const uploadNewByDrop = event => {
   event.preventDefault();
-  if (errorMsg.style.display !== "none") { hideElement(errorMsg); }
+  if (errorMsg.style.display !== "none") {
+    hideElement(errorMsg);
+  }
 
   if (event.target === event.currentTarget || event.target === canvas || event.target === errorMsg || event.target.parentElement === errorMsg) {
     if (image.dataset.status !== "load") {
