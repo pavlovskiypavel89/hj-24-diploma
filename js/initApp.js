@@ -17,41 +17,41 @@ const [preloader] = app.getElementsByClassName("image-loader");
 const [errorMsg] = app.getElementsByClassName("error");
 const [errorHeader] = errorMsg.getElementsByClassName("error__header");
 const [errorText] = errorMsg.getElementsByClassName("error__message");
- 
+
 const markerBounds = app.getElementsByClassName("comments__marker")[0].getBoundingClientRect();
-const formBounds = app.getElementsByClassName("comments__form")[0].getBoundingClientRect();	
-const defaultMenuHeight = menu.offsetHeight;      
+const formBounds = app.getElementsByClassName("comments__form")[0].getBoundingClientRect();
+const defaultMenuHeight = menu.offsetHeight;
 const clickPointShifts = {
   left: markerBounds.left - formBounds.left + markerBounds.width / 2,
   top: markerBounds.top - formBounds.top + markerBounds.height
 };
- 
+
 const apiURL = "//neto-api.herokuapp.com/pic";
 
 const picture = document.createElement("div");
 const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");  
+const ctx = canvas.getContext("2d");
 
 /********************** Отрисовка запуска приложения *************************/
 
 const renderApp = () => {
   app.removeChild(app.getElementsByClassName("comments__form")[0]);
- 
+
   image.addEventListener("load", () => {
-   picture.style.width = image.width + "px";
-   picture.style.height = image.height + "px";
-   picture.classList.add("current-image", "picture-wrap");
+    picture.style.width = image.width + "px";
+    picture.style.height = image.height + "px";
+    picture.classList.add("current-image", "picture-wrap");
 
-   canvas.width = image.width;
-   canvas.height = image.height;
-   canvas.classList.add("current-image", "mask-canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    canvas.classList.add("current-image", "mask-canvas");
 
-   picture.appendChild(image);
-   picture.insertBefore(canvas, image.nextElementSibling);
-   app.insertBefore(picture, menu.nextElementSibling);
- }); 
+    picture.appendChild(image);
+    picture.insertBefore(canvas, image.nextElementSibling);
+    app.insertBefore(picture, menu.nextElementSibling);
+  });
 
-  const urlParamID = new URL(`${window.location.href}`).searchParams.get("id");  
+  const urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
   const menuSettings = getSessionSettings("menuSettings");
 
   if (menuSettings) {
@@ -69,7 +69,7 @@ const renderApp = () => {
     menu.style.left = menuSettings.left + "px";
     menu.style.top = menuSettings.top + "px";
 
-    commentsOff.checked = menuSettings.displayComments === "hidden" ? true : false; 
+    commentsOff.checked = menuSettings.displayComments === "hidden" ? true : false;
   } else {
     selectMenuModeTo("initial");
   }
@@ -87,11 +87,10 @@ const renderApp = () => {
     } catch (err) {
       renderComments(imageSettings);
     }
-
   } else if (urlParamID) {
     isLinkedFromShare = true;
     loadImage({ id: urlParamID });
-  } 
+  }
 };
 
 document.addEventListener("DOMContentLoaded", renderApp);
@@ -108,13 +107,12 @@ const hideElement = el => {
 
 const toggleCommentsForm = radioBtn => {
   Array.from(app.getElementsByClassName("comments__form")).forEach(comments => {
-      if (radioBtn.value === "on") {
-        showElement(comments);
-      } else {
-        hideElement(comments);
-      }
+    if (radioBtn.value === "on") {
+      showElement(comments);
+    } else {
+      hideElement(comments);
     }
-  );
+  });
 };
 
 const saveImageSettings = imgData => {
@@ -167,7 +165,7 @@ const selectMenuModeTo = (mode, selectedItemType) => {
       ).dataset.state = "selected";
       showElement(burgerBtn);
     break;
-  }  
+  }
 
   const menuSettings = getSessionSettings("menuSettings");
   if (menuSettings) {
