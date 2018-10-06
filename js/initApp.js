@@ -36,20 +36,9 @@ const ctx = canvas.getContext("2d");
 
 const renderApp = () => {
   app.removeChild(app.getElementsByClassName("comments__form")[0]);
-
-  image.addEventListener("load", () => {
-    picture.style.width = image.width + "px";
-    picture.style.height = image.height + "px";
-    picture.classList.add("current-image", "picture-wrap");
-
-    canvas.width = image.width;
-    canvas.height = image.height;
-    canvas.classList.add("current-image", "mask-canvas");
-
-    picture.appendChild(image);
-    picture.insertBefore(canvas, image.nextElementSibling);
-    app.insertBefore(picture, menu.nextElementSibling);
-  });
+  picture.appendChild(image);
+  picture.insertBefore(canvas, image.nextElementSibling);
+  app.insertBefore(picture, menu.nextElementSibling);
 
   const urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
   const menuSettings = getSessionSettings("menuSettings");
@@ -81,18 +70,22 @@ const renderApp = () => {
     image.dataset.status = "load";
     image.src = imageSettings.url;
     urlTextarea.value = imageSettings.path;
-
-    try {
-      initWSSConnection(imageSettings.id);
-    } catch (err) {
-      renderComments(imageSettings);
-    }
-
+    initWSSConnection(imageSettings.id);
   } else if (urlParamID) {
     isLinkedFromShare = true;
     loadImage({ id: urlParamID });
   }
 };
+
+image.addEventListener("load", () => {
+    picture.style.width = image.width + "px";
+    picture.style.height = image.height + "px";
+    picture.classList.add("current-image", "picture-wrap");
+
+    canvas.width = image.width;
+    canvas.height = image.height;
+    canvas.classList.add("current-image", "mask-canvas");
+  });
 
 document.addEventListener("DOMContentLoaded", renderApp);
 
