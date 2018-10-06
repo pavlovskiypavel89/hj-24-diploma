@@ -2,7 +2,7 @@
 const checkSelectionResult = () => {
   try {
     const done = document.execCommand("copy");
-    console.log( `Копирование ссылки: ${urlTextarea.value}${ (done ? " " : " не") }выполнено`);
+    console.log(`Копирование ссылки: ${urlTextarea.value}${done ? " " : " не"}выполнено`);
   } catch (err) {
     console.error(`Не удалось скопировать ссылку. Ошибка: ${err}`);
   }
