@@ -37,6 +37,7 @@ const ctx = canvas.getContext("2d");
 const renderApp = () => {
   app.removeChild(app.getElementsByClassName("comments__form")[0]);
   picture.appendChild(image);
+  hideElement(canvas);
   picture.insertBefore(canvas, image.nextElementSibling);
   app.insertBefore(picture, menu.nextElementSibling);
 
@@ -85,6 +86,7 @@ image.addEventListener("load", () => {
     canvas.width = image.width;
     canvas.height = image.height;
     canvas.classList.add("current-image", "mask-canvas");
+    showElement(canvas);
   });
 
 document.addEventListener("DOMContentLoaded", renderApp);
