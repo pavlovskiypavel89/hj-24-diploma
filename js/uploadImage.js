@@ -12,9 +12,11 @@ const showImage = imgData => {
   image.src = imgData.url;
   saveImageSettings(imgData);
   window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
-
+  
+  while (picture.hasChildNodes() && picture.lastElementChild.classList.contains("comments__form")) {
+    picture.removeChild(picture.lastElementChild);
+  }
   initWSSConnection(imgData.id);
-  renderComments(imgData);
 
   image.addEventListener("load", () => {
     hideElement(preloader);
