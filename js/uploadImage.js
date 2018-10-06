@@ -14,7 +14,7 @@ const showImage = imgData => {
   window.history.pushState({ path: urlTextarea.value }, "", urlTextarea.value);
 
   initWSSConnection(imgData.id);
-  renderComments(imgData);
+  setTimeout(() => renderComments(imgData), 1000);
 
   image.addEventListener("load", () => {
     hideElement(preloader);
