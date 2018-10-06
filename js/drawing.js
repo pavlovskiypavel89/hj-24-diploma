@@ -36,7 +36,7 @@ const draw = () => {
 
 const sendMask = () => {
   canvas.toBlob(blob => socket.send(blob));
-};	
+};
 
 const mouseDown = event => {
   if (drawBtn.dataset.state === "selected") {
@@ -56,14 +56,14 @@ const mouseMove = event => {
     needsRendering = true;
   }
 };
-	 
+
 const mouseUp = event => {
   if (drawBtn.dataset.state === "selected") {
     isDrawing = false;
     strokes = [];
-    setTimeout(sendMask, 1000);  
-  };
-}	
+    setTimeout(sendMask, 1000);
+  }
+};
 
 const initDraw = event => {
   ctx.strokeStyle = ctx.fillStyle = getComputedStyle(checkedColorBtn.nextElementSibling).backgroundColor;
@@ -84,7 +84,7 @@ const initDraw = event => {
   canvas.addEventListener("mousemove", mouseMove);
   canvas.addEventListener("mouseup", mouseUp);
   canvas.addEventListener("mouseleave", () => (isDrawing = false));
-}
+};
 
 //Инициализация режима рисования:
 drawBtn.addEventListener("click", initDraw);
