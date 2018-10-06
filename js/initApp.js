@@ -82,13 +82,12 @@ const renderApp = () => {
     image.src = imageSettings.url;
     urlTextarea.value = imageSettings.path;
 
-    image.addEventListener("load", () => {
-      try {
-        initWSSConnection(imageSettings.id);
-      } catch (err) {
-        renderComments(imageSettings);
-      }
-    });
+    try {
+      initWSSConnection(imageSettings.id);
+    } catch (err) {
+      renderComments(imageSettings);
+    }
+
   } else if (urlParamID) {
     isLinkedFromShare = true;
     loadImage({ id: urlParamID });
