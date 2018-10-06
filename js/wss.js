@@ -1,7 +1,7 @@
 /**************** Инициализация и логика работы вебсокет соединения: *************/
 let socket;
 
-const addCommentInDirectory = (comment, directory) =>  {
+const addCommentInDirectory = (comment, directory) => {
   directory[comment.id] = {
     left: comment.left,
     top: comment.top,
@@ -18,9 +18,9 @@ const updatePic = event => {
       if (wssResponse.pic.mask) {
         canvas.style.background = `url("${wssResponse.pic.mask}")`;
       } else {
-        canvas.style.background = ""; 
+        canvas.style.background = "";
       }
-      
+
       if (wssResponse.pic.comments) {
         renderComments(wssResponse.pic);
       }
@@ -54,14 +54,14 @@ const updatePic = event => {
         sessionStorage.wssReload = 1;
         socket.close(1000);
         initWSSConnection(getSessionSettings("imageSettings").id);
-      } 
+      }
     break;
   }
 };
 
 const initWSSConnection = id => {
   socket = new WebSocket(`wss:${apiURL}/${id}`);
-	
+
   socket.addEventListener("message", updatePic);
   socket.addEventListener("open", event => console.log("Вебсокет соединение установлено"));
   socket.addEventListener("close", event => console.log(event.wasClean ? `"Чистое закрытие" соединения` : `Обрыв связи. Причина: ${event.reason}`));
