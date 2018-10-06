@@ -17,6 +17,7 @@ const showImage = imgData => {
   setTimeout(() => renderComments(imgData), 1000);
 
   image.addEventListener("load", () => {
+    console.log(1);
     hideElement(preloader);
 
     const menuSettings = getSessionSettings("menuSettings");
