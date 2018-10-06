@@ -70,6 +70,7 @@ const crtNewCommentsForm = (left, top) => {
 };
 
 const parseNewCommentsForm = comment => {
+  console.log(2);
   if (!picture.firstElementChild) {
     return document.createTextNode("");
   }
