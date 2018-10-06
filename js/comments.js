@@ -40,10 +40,7 @@ const crtNewCommentNode = (date, message) => {
 };
 
 const crtNewCommentsFormNode = (left, top) => {
-  return el(
-    "form",
-    { class: "comments__form", style: `left: ${left}px; top: ${top}px;` },
-    [
+  return el("form", { class: "comments__form", style: `left: ${left}px; top: ${top}px;` }, [
       el("span", { class: "comments__marker" }, null),
       el("input",{ type: "checkbox", class: "comments__marker-checkbox" }, null),
       el("div", { class: "comments__body", style: "overflow-y: auto;" }, [
