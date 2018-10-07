@@ -37,8 +37,8 @@ const ctx = canvas.getContext("2d");
 const renderApp = () => {
   app.removeChild(app.getElementsByClassName("comments__form")[0]);
   picture.appendChild(image);
-  hideElement(canvas);
   picture.insertBefore(canvas, image.nextElementSibling);
+  hideElement(canvas);
   app.insertBefore(picture, menu.nextElementSibling);
 
   const urlParamID = new URL(`${window.location.href}`).searchParams.get("id");
