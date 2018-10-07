@@ -23,9 +23,7 @@ const drawStroke = points => {
   ctx.stroke();
 };
 
-const makePoint = (x, y) => {
-  return [x, y];
-};
+const makePoint = (x, y) => [x, y];
 
 const draw = () => {
   strokes.forEach(stroke => {
