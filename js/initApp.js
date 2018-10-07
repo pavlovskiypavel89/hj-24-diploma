@@ -86,7 +86,7 @@ image.addEventListener("load", () => {
     canvas.height = image.height;
     canvas.classList.add("current-image", "mask-canvas");
     showElement(canvas);
-  });
+});
 
 document.addEventListener("DOMContentLoaded", renderApp);
 
