@@ -24,9 +24,9 @@ const putMenu = event => {
       shiftX: draggedBounds.width / 2,
       shiftY: draggedBounds.height / 2,
       minX: app.offsetLeft,
-      maxX: app.offsetWidth - Number(draggedCSS.width.replace("px", "")),
+      maxX: app.offsetWidth - parseInt(draggedCSS.width),
       minY: app.offsetTop,
-      maxY: app.offsetHeight - Number(draggedCSS.height.replace("px", ""))
+      maxY: app.offsetHeight - parseInt(draggedCSS.height)
     };
   }
 };
